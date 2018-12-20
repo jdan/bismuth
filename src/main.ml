@@ -49,5 +49,28 @@ let rec value_of_expression env = function
         match value_of_expression env e1 with
             | BoolVal true -> value_of_expression env e2
             | BoolVal false -> value_of_expression env e3
-            | v -> raise (RuntimeException ("Expected boolean, received " ^ string_of_value v))
+            | v -> raise (
+                RuntimeException ("Expected boolean, received " ^ string_of_value v)
+            )
     )
+
+let func_of_binary_op op =
+    let error_message a b =
+        RuntimeException (
+            "Expected (int, int), received " ^
+            (string_of_value a) ^ ", " ^ (string_of_value b)
+        )
+    in
+        FuncVal (fun a -> FuncVal (fun b ->
+            match (a, b) with
+                | (NumVal a', NumVal b') -> NumVal (op a' b')
+                | (u, v) -> raise (error_message u v)))
+
+let stdlib: env = [
+    ("+", func_of_binary_op (+));
+    ("-", func_of_binary_op (-));
+    ("*", func_of_binary_op ( * ));
+    ("/", func_of_binary_op (/));
+]
+
+let eval = value_of_expression stdlib
