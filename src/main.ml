@@ -10,6 +10,9 @@ type expression =
     | Abstraction of string * expression
     | Application of expression * expression
 
+    (* Special forms *)
+    | IfExpression of expression * expression * expression
+
 type value =
     | NilVal
     | NumVal of int
@@ -41,4 +44,10 @@ let rec value_of_expression env = function
         match value_of_expression env e1 with
         | FuncVal f -> f (value_of_expression env e2)
         | v -> raise (RuntimeException ("Expected function, received " ^ string_of_value v))
+    )
+    | IfExpression (e1, e2, e3) -> (
+        match value_of_expression env e1 with
+            | BoolVal true -> value_of_expression env e2
+            | BoolVal false -> value_of_expression env e3
+            | v -> raise (RuntimeException ("Expected boolean, received " ^ string_of_value v))
     )
