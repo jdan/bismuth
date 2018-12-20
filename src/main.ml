@@ -25,12 +25,12 @@ type env = (string * value) list
 let string_of_value = function
     | NilVal -> "nil"
     | NumVal v -> string_of_int v
-    | StrVal v -> v
+    | StrVal v -> "\"" ^ v ^ "\""
     | BoolVal v -> string_of_bool v
     | FuncVal _ -> "#func"
 
 exception RuntimeException of string
-let rec value_of_expression env = function
+let rec value_of_expression (env: env) = function
     | Nil -> NilVal
     | Number v -> NumVal v
     | String v -> StrVal v
