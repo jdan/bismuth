@@ -66,13 +66,7 @@ let () =
                     , Variable "q"
                     )
                 ));
-        assert (swap_variable "x" "q" orig =
-            Abstraction ("q",
-                Application
-                    ( Application (Variable "+", Variable "q")
-                    , Variable "z"
-                    )
-                ));
+        assert (swap_variable "x" "q" orig = orig);
     );
 
     print_endline "All tests passed."

@@ -88,6 +88,6 @@ let rec swap_variable a b = function
                     )
     | Abstraction (v, e) ->
         if v = a
-        then Abstraction (b, swap_variable a b e)
+        then Abstraction (a, e) (* don't touch! `a` is a fresh variable *)
         else Abstraction (v, swap_variable a b e)
     | expr -> expr
