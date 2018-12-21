@@ -43,7 +43,9 @@ let rec value_of_expression (env: env) = function
     | Application (e1, e2) -> (
         match value_of_expression env e1 with
         | FuncVal f -> f (value_of_expression env e2)
-        | v -> raise (RuntimeException ("Expected function, received " ^ string_of_value v))
+        | v -> raise (RuntimeException (
+            "Expected function, received " ^ string_of_value v ^
+            ". Did you apply a function too many times?"))
     )
     | IfExpression (e1, e2, e3) -> (
         match value_of_expression env e1 with
@@ -65,6 +67,13 @@ let func_of_binary_op op =
             match (a, b) with
                 | (NumVal a', NumVal b') -> NumVal (op a' b')
                 | (u, v) -> raise (error_message u v)))
+
+(* Syntactic sugar *)
+let apply' f args =
+    let rec inner acc = function
+        | [] -> acc
+        | arg::args -> inner (Application (acc, arg)) args
+    in inner f args
 
 let stdlib: env = [ ("+", func_of_binary_op (+))
                   ; ("-", func_of_binary_op (-))

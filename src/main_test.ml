@@ -47,6 +47,19 @@ let () =
         Application (Application (
             (Variable "-"), Number 16), Number 2)));
 
+    (* apply' *)
+    assert (NumVal 900 = eval (
+        apply' (Variable "-") [Number 1000; Number 100]
+    ));
+
+    let sub3 = FuncVal (fun a -> FuncVal (fun b -> FuncVal (fun c ->
+        match (a, b, c) with
+            | (NumVal a', NumVal b', NumVal c') -> NumVal (a' - b' - c')
+            | _ -> raise (RuntimeException "Sorry"))))
+    in assert (NumVal 890 = value_of_expression [("-", sub3)] (
+        apply' (Variable "-") [Number 1000; Number 100; Number 10]
+    ));
+
     assert (Number 10 = swap_variable "x" "y" (Number 10));
     assert (Variable "y" = swap_variable "x" "y" (Variable "x"));
     assert (Variable "z" = swap_variable "x" "y" (Variable "z"));
