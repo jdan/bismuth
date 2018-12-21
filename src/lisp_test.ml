@@ -1,4 +1,4 @@
-open Main;;
+open Lisp;;
 open Sugar;;
 
 let assert_throws fn =

@@ -1,4 +1,4 @@
-open Main;;
+open Lisp;;
 
 let _apply f args =
     (* Apply a list of expressions to a curried function *)
