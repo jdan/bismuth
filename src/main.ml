@@ -66,11 +66,28 @@ let func_of_binary_op op =
                 | (NumVal a', NumVal b') -> NumVal (op a' b')
                 | (u, v) -> raise (error_message u v)))
 
-let stdlib: env = [
-    ("+", func_of_binary_op (+));
-    ("-", func_of_binary_op (-));
-    ("*", func_of_binary_op ( * ));
-    ("/", func_of_binary_op (/));
-]
+let stdlib: env = [ ("+", func_of_binary_op (+))
+                  ; ("-", func_of_binary_op (-))
+                  ; ("*", func_of_binary_op ( * ))
+                  ; ("/", func_of_binary_op (/))
+                  ]
 
 let eval = value_of_expression stdlib
+
+(* Transformations *)
+let rec swap_variable a b = function
+    | Variable v -> Variable (if v = a then b else v)
+    | IfExpression (e1, e2, e3) ->
+        IfExpression ( swap_variable a b e1
+                     , swap_variable a b e2
+                     , swap_variable a b e3
+                     )
+    | Application (e1, e2) ->
+        Application ( swap_variable a b e1
+                    , swap_variable a b e2
+                    )
+    | Abstraction (v, e) ->
+        if v = a
+        then Abstraction (b, swap_variable a b e)
+        else Abstraction (v, swap_variable a b e)
+    | expr -> expr

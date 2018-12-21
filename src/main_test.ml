@@ -47,4 +47,32 @@ let () =
         Application (Application (
             (Variable "-"), Number 16), Number 2)));
 
+    assert (Number 10 = swap_variable "x" "y" (Number 10));
+    assert (Variable "y" = swap_variable "x" "y" (Variable "x"));
+    assert (Variable "z" = swap_variable "x" "y" (Variable "z"));
+
+    let orig =
+        Abstraction ("x",
+            Application
+                ( Application (Variable "+", Variable "x")
+                , Variable "z"
+                )
+            )
+    in (
+        assert (swap_variable "z" "q" orig =
+            Abstraction ("x",
+                Application
+                    ( Application (Variable "+", Variable "x")
+                    , Variable "q"
+                    )
+                ));
+        assert (swap_variable "x" "q" orig =
+            Abstraction ("q",
+                Application
+                    ( Application (Variable "+", Variable "q")
+                    , Variable "z"
+                    )
+                ));
+    );
+
     print_endline "All tests passed."
