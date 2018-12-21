@@ -61,12 +61,18 @@ let () =
         _apply (Variable "-") [Number 1000; Number 100; Number 10]
     ));
 
-    (* _let *)
+    (* _let / _let' *)
     assert (NumVal 42 = eval (
         _let "x" (Number 10) (
             _let "y" (Number 32) (
                 _apply (Variable "+") [Variable "x"; Variable "y"]
             )
+        )
+    ));
+
+    assert (NumVal 42 = eval (
+        _let' [("x", Number 10); ("y", Number 32)] (
+            _apply (Variable "+") [Variable "x"; Variable "y"]
         )
     ));
 

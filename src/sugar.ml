@@ -14,3 +14,10 @@ let _let binding exp body =
         , exp
         )
     ))
+
+let rec _let' bindings body = match bindings with
+    | [] -> body
+    | (v, e)::bindings' ->
+        _let v e (
+            _let' bindings' body
+        )
