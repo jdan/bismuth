@@ -89,12 +89,11 @@ let () =
             )
     in (
         assert (swap_variable "z" "q" orig =
-            Abstraction ("x",
-                Application
-                    ( Application (Variable "+", Variable "x")
-                    , Variable "q"
-                    )
-                ));
+            Abstraction
+                ( "x"
+                , _apply (Variable "+") [Variable "x"; Variable "q"]
+                )
+        );
         assert (swap_variable "x" "q" orig = orig);
     );
 
