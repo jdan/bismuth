@@ -1,4 +1,5 @@
 open Main;;
+open Sugar;;
 
 let assert_throws fn =
     assert (
