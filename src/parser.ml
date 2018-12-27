@@ -1,6 +1,5 @@
 open Opal
 open Lisp
-open Sugar
 
 (* Atoms *)
 let nil_lit = token "nil" => (fun _ -> Nil)
@@ -47,7 +46,7 @@ and _let_expression input =
     token "]" >>
     expr >>= fun body ->
     rparen >>
-    return (_let bindings body)
+    return (LetExpression (bindings, body))
   ) input
 and abstraction input =
   ( lparen >>
@@ -64,7 +63,7 @@ and application input =
     expr >>= fun fn ->
     many1 expr >>= fun args ->
     rparen >>
-    return (_apply fn args)
+    return (MultiApplication (fn, args))
   ) input
 and expr input =
   ( nil_lit <|> number_lit <|> string_lit <|> boolean_lit <|> variable_lit <|>

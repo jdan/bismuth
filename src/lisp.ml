@@ -12,6 +12,8 @@ type expression =
 
   (* Special forms *)
   | IfExpression of expression * expression * expression
+  | LetExpression of (string * expression) list * expression
+  | MultiApplication of expression * expression list
 
 type value =
   | NilVal
@@ -28,6 +30,26 @@ let string_of_value = function
   | StrVal v -> "\"" ^ v ^ "\""
   | BoolVal v -> string_of_bool v
   | FuncVal _ -> "#func"
+
+let _apply f args =
+  (* Apply a list of expressions to a curried function *)
+  let rec inner acc = function
+    | [] -> acc
+    | arg::args -> inner (Application (acc, arg)) args
+  in inner f args
+
+let rec _let bindings body =
+  (* let x = e in f <=> ((fn (x) f) e) *)
+  let single binding exp body =
+    Application (( Abstraction (binding, body)
+                 , exp
+                 ))
+  in match bindings with
+  | [] -> body
+  | (v, e)::bindings' ->
+    single v e (
+      _let bindings' body
+    )
 
 exception RuntimeException of string
 let rec value_of_expression (env: env) = function
@@ -55,6 +77,8 @@ let rec value_of_expression (env: env) = function
           RuntimeException ("Expected boolean, received " ^ string_of_value v)
         )
     )
+  | LetExpression (bindings, body) -> _let bindings body |> value_of_expression env
+  | MultiApplication (f, args) -> _apply f args |> value_of_expression env
 
 let func_of_binary_op op =
   let error_message a b =
