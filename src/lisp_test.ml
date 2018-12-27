@@ -61,17 +61,8 @@ let () =
       _apply (Variable "-") [Number 1000; Number 100; Number 10]
     ));
 
-  (* _let / _let' *)
   assert (NumVal 42 = eval (
-      _let "x" (Number 10) (
-        _let "y" (Number 32) (
-          _apply (Variable "+") [Variable "x"; Variable "y"]
-        )
-      )
-    ));
-
-  assert (NumVal 42 = eval (
-      _let' [("x", Number 10); ("y", Number 32)] (
+      _let [("x", Number 10); ("y", Number 32)] (
         _apply (Variable "+") [Variable "x"; Variable "y"]
       )
     ));
@@ -100,5 +91,6 @@ let () =
   assert (NumVal 7 = (Parser.parse "(+ 3 4)" |> eval));
   assert (NumVal 42 = (Parser.parse "(* 6 7)" |> eval));
   assert (NumVal 42 = (Parser.parse "((fn (x) (+ x 5)) 37)" |> eval));
+  assert (NumVal 20 = (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> eval));
 
   print_endline "All tests passed."

@@ -33,6 +33,22 @@ let rec if_expression input =
     rparen >>
     return (IfExpression (condition, consequent, alternate))
   ) input
+and _let_expression input =
+  let single = ( lparen >>
+                 binding >>= fun binding ->
+                 expr >>= fun value ->
+                 rparen >>
+                 return (binding, value)
+               ) in
+  ( lparen >>
+    token "let" >>
+    token "[" >>
+    many1 single >>= fun bindings ->
+    token "]" >>
+    expr >>= fun body ->
+    rparen >>
+    return (_let bindings body)
+  ) input
 and abstraction input =
   ( lparen >>
     token "fn" >>
@@ -52,7 +68,7 @@ and application input =
   ) input
 and expr input =
   ( nil_lit <|> number_lit <|> string_lit <|> boolean_lit <|> variable_lit <|>
-    if_expression <|> abstraction <|> application
+    if_expression <|> _let_expression <|> abstraction <|> application
   ) input
 
 exception ParseException
