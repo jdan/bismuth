@@ -1,2 +1,3 @@
+PKG opal
 S src
 B _build/src

@@ -1,6 +1,5 @@
 open Lisp;;
 open Sugar;;
-open Parser;;
 
 let assert_throws fn =
   assert (
@@ -98,18 +97,8 @@ let () =
     assert (swap_variable "x" "q" orig = orig);
   );
 
-  (* parser tests *)
-  assert ([LPAREN; IDENTIFIER "+"; INT 3; INT 4; RPAREN] =
-          tokens_of_string "(+ 3 4)");
-
-  assert ([LPAREN; IDENTIFIER "+"; INT 123; INT 456; RPAREN] =
-          tokens_of_string "(+ 123 456 )");
-
-  assert ([
-      LPAREN; IDENTIFIER "+"; INT 123; INT 456;
-      LPAREN; IDENTIFIER "+"; INT 789; INT 0; RPAREN; RPAREN
-    ] =
-      tokens_of_string "(+ 123 456 (+ 789 0))"
-    );
+  assert (NumVal 7 = (Parser.parse "(+ 3 4)" |> eval));
+  assert (NumVal 42 = (Parser.parse "(* 6 7)" |> eval));
+  assert (NumVal 42 = (Parser.parse "((fn (x) (+ x 5)) 37)" |> eval));
 
   print_endline "All tests passed."

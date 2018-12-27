@@ -1,107 +1,61 @@
-type token =
-  | LPAREN
-  | RPAREN
-  | INT of int
-  | STRING of string
-  | BOOL of bool
-  | IDENTIFIER of string
+open Opal
+open Lisp
+open Sugar
 
-let string_of_token = function
-  | LPAREN -> "LPAREN"
-  | RPAREN -> "RPAREN"
-  | INT(x) -> "INT(" ^ string_of_int x ^ ")"
-  | STRING(str) -> "STRING(\"" ^ str ^ "\")"
-  | BOOL(b) -> "BOOL(" ^ string_of_bool b ^ ")"
-  | IDENTIFIER(i) -> "IDENTIFIER(" ^ i ^ ")"
+(* Atoms *)
+let nil_lit = token "nil" => (fun _ -> Nil)
 
-let string_of_tokens tokens =
-  "[" ^ String.concat "; " (List.map string_of_token tokens) ^ "]"
+let true_lit = token "#t" => (fun _ -> Boolean true)
+let false_lit = token "#f" => (fun _ -> Boolean false)
+let boolean_lit = true_lit <|> false_lit
 
-(* https://caml.inria.fr/mantis/view.php?id=5367 *)
-let explode s =
-  let rec exp i l =
-    if i < 0 then l else exp (i - 1) (s.[i] :: l) in
-  exp (String.length s - 1) []
+let number_lit = spaces >> many1 digit => implode % int_of_string % (fun i -> Number i)
+let string_lit =
+  let quot = exactly '"'
+  in spaces >> between quot quot (many1 any) => implode % (fun s -> Lisp.String s)
 
-let implode l =
-  let res = Bytes.create (List.length l) in
-  let rec imp i = function
-    | [] -> res
-    | c :: l ->  Bytes.set res i c; imp (i + 1) l in
-  Bytes.to_string (imp 0 l)
+let binding =
+  let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?']
+  in spaces >> many1 (digit <|> letter <|> symbol) => implode
 
-exception TokenizeException of string
+let variable_lit =
+  binding => fun v -> Variable v
 
-let extract_string =
-  (* basically takeWhile p -> p <> '"' *)
-  let rec inner acc = function
-    | [] -> (acc, [])
-    | '"'::' '::rest -> (acc, rest)
-    | '"'::_::rest as whole -> raise (TokenizeException (
-        "Unable to extract string from \"" ^
-        (implode acc) ^
-        (implode whole)
-      ))
-    | c::rest -> inner (c::acc) rest
-  in inner []
+(* Now the fun stuff *)
+let lparen = token "("
+let rparen = token ")"
+let rec if_expression input =
+  ( lparen >>
+    token "if" >>
+    expr >>= fun condition ->
+    expr >>= fun consequent ->
+    expr >>= fun alternate ->
+    rparen >>
+    return (IfExpression (condition, consequent, alternate))
+  ) input
+and abstraction input =
+  ( lparen >>
+    token "fn" >>
+    lparen >>
+    binding >>= fun binding ->
+    rparen >>
+    expr >>= fun body ->
+    rparen >>
+    return (Abstraction (binding, body))
+  ) input
+and application input =
+  ( lparen >>
+    expr >>= fun fn ->
+    many1 expr >>= fun args ->
+    rparen >>
+    return (_apply fn args)
+  ) input
+and expr input =
+  ( nil_lit <|> number_lit <|> string_lit <|> boolean_lit <|> variable_lit <|>
+    if_expression <|> abstraction <|> application
+  ) input
 
-let matches_int = function
-  | [] -> false
-  | c::_ -> (match String.index_opt "0123456789" c with
-      | None -> false
-      | _ -> true
-    )
-
-let matches_ident = function
-  | [] -> false
-  | c::_ -> (
-      let valid_chars =
-        "abcdefghijklmnopqrstuvwxyz" ^
-        "0123456789" ^
-        "_+*'?-"
-      in match String.index_opt valid_chars c with
-      | None -> false
-      | _ -> true
-    )
-
-let extraction_of_matcher fn =
-  let rec inner = function
-    | [] -> ([], [])
-    | ' '::rest -> ([], rest)
-    | ')'::_ as whole -> ([], whole)
-    | c::rest as whole ->
-      if fn whole
-      then
-        let (acc, rest') = inner rest
-        in (c::acc, rest')
-      else raise (TokenizeException (
-          "Unable to extract int at " ^
-          (c |> String.make 1)
-        ))
-  in inner
-
-let extract_int = extraction_of_matcher matches_int
-let extract_ident = extraction_of_matcher matches_ident
-
-let tokens_of_string str =
-  let rec inner = function
-    | [] -> []
-    | ' '::rest -> inner rest
-    | '('::rest -> LPAREN :: inner rest
-    | ')'::rest -> RPAREN :: inner rest
-    | '#'::'t'::rest -> BOOL true ::  inner rest
-    | '#'::'f'::rest -> BOOL false ::  inner rest
-    | '"'::rest ->
-      let (str, rest') = extract_string rest
-      in STRING (implode str) :: inner rest'
-    | other ->
-      if matches_int other then
-        let (i, rest) = extract_int other
-        in INT (implode i |> int_of_string) :: inner rest
-      else if matches_ident other then
-        let (i, rest) = extract_ident other
-        in IDENTIFIER (implode i) :: inner rest
-      else
-        raise (TokenizeException (List.hd other |> String.make 1))
-
-  in inner (explode str)
+exception ParseException
+let parse input = match Opal.parse expr (LazyStream.of_string input) with
+  | Some res -> res
+  | None -> raise ParseException
