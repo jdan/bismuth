@@ -71,12 +71,10 @@ let () =
   assert (Variable "z" = swap_variable "x" "y" (Variable "z"));
 
   let orig =
-    Abstraction ("x",
-                 Application
-                   ( Application (Variable "+", Variable "x")
-                   , Variable "z"
-                   )
-                )
+    Abstraction
+      ( "x"
+      , MultiApplication (Variable "+", [Variable "x"; Variable "z"])
+      )
   in (
     assert (swap_variable "z" "q" orig =
             Abstraction
@@ -91,5 +89,8 @@ let () =
   assert (NumVal 42 = (Parser.parse "(* 6 7)" |> eval));
   assert (NumVal 42 = (Parser.parse "((fn (x) (+ x 5)) 37)" |> eval));
   assert (NumVal 20 = (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> eval));
+
+  assert ("(let [(x 5) (y 15)] (+ x y))" = (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_expression));
+  assert ("(if #t 3 5)" = (Parser.parse "(if #t \n 3  \t 5)" |> string_of_expression));
 
   print_endline "All tests passed."

@@ -81,6 +81,31 @@ let rec value_of_expression (env: env) = function
   | LetExpression (bindings, body) -> _let bindings body |> value_of_expression env
   | MultiApplication (f, args) -> _apply f args |> value_of_expression env
 
+let rec string_of_expression = function 
+  | Nil -> "nil"
+  | Number v -> string_of_int v
+  | String v -> "\"" ^ v ^ "\""
+  | Boolean true -> "#t"
+  | Boolean false -> "#f"
+  | Variable v -> v
+  | Abstraction (p, e) -> "(fn (" ^ p ^ ") " ^ string_of_expression e ^ ")"
+  | Application (e1, e2) -> "(" ^ string_of_expression e1 ^ " " ^ string_of_expression e2 ^ ")"
+  | IfExpression (e1, e2, e3) -> "(if " ^ String.concat " " (List.map string_of_expression [e1; e2; e3]) ^ ")"
+  | LetExpression (bindings, body) ->
+    let string_of_binding (b, v) = "(" ^ b ^ " " ^ string_of_expression v ^ ")"
+    in 
+    "(let [" ^ 
+    String.concat " " (List.map string_of_binding bindings) ^ 
+    "] " ^ 
+    string_of_expression body ^ 
+    ")"
+  | MultiApplication (f, args) ->
+    "(" ^
+    string_of_expression f ^
+    " " ^
+    String.concat " " (List.map string_of_expression args) ^
+    ")"
+
 let func_of_binary_op op =
   let error_message a b =
     RuntimeException (
