@@ -77,6 +77,7 @@ let rec value_of_expression (env: env) = function
           RuntimeException ("Expected boolean, received " ^ string_of_value v)
         )
     )
+  (* _let and _apply are basically transformations *)
   | LetExpression (bindings, body) -> _let bindings body |> value_of_expression env
   | MultiApplication (f, args) -> _apply f args |> value_of_expression env
 
@@ -116,4 +117,6 @@ let rec swap_variable a b = function
     if v = a
     then Abstraction (a, e) (* don't touch! `a` is a fresh variable *)
     else Abstraction (v, swap_variable a b e)
+  | LetExpression (bindings, body) -> swap_variable a b (_let bindings body)
+  | MultiApplication (f, args) -> swap_variable a b (_apply f args)
   | expr -> expr
