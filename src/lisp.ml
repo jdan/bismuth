@@ -164,7 +164,7 @@ let rec flatten = function
     [orig] 
     @ flatten e
     @ (List.map flatten es |> List.concat)
-  | atom -> [atom] 
+  | atom -> [atom]
 
 let num_exprs expr = flatten expr |> List.length
 
@@ -173,3 +173,60 @@ let traverse expr pos =
   match List.nth_opt (flatten expr) pos with
   | None -> raise TraversalError
   | Some e -> e
+
+let replace_nth expr n new_expr =
+  let rec inner_multi exprs n =
+    (* apply inner to a sequence of exprs and return the final n *)
+    let (exprs', n') = List.fold_left
+        (fun (acc, n) expr ->
+           let (expr', n') = inner expr n
+           in (expr'::acc, n')
+        )
+        ([], n)
+        exprs
+    in (List.rev exprs', n')
+
+  and inner expr n =
+    if n < 0
+    then (expr, -1) (* we could probably keep a third `done` flag around *)
+    else if n = 0
+    then (new_expr, -1)
+    else match expr with
+      | Application (e1, e2) -> (
+          match inner_multi [e1; e2] (n - 1) with
+          | ([e1'; e2'], n') -> (Application (e1', e2'), n')
+          | _ -> raise TraversalError
+        )
+
+      | Abstraction (v, e) ->
+        let (e', n') = inner e (n - 1)
+        in
+        (Abstraction (v, e'), n')
+
+      | IfExpression (e1, e2, e3) -> (
+          match inner_multi [e1; e2; e3] (n - 1) with
+          | ([e1'; e2'; e3'], n') -> (IfExpression (e1', e2', e3'), n')
+          | _ -> raise TraversalError
+        )
+
+      | LetExpression (bindings, body) ->
+        let binding_vars = List.map (fun (v, _) -> v) bindings
+        and zip l1 l2 = List.map2 (fun a b -> (a, b)) l1 l2
+        in let (bindings_exprs', n') = inner_multi (List.map (fun (_, e) -> e) bindings) (n - 1)
+        in let (body', n'') = inner body n'
+
+        in
+        (LetExpression ((zip binding_vars bindings_exprs'), body'), n'')
+
+      | MultiApplication (e, es) ->
+        let (e', n') = inner e (n - 1)
+        in let (es', n'') = inner_multi es n'
+        in (MultiApplication (e', es'), n'')
+
+      | atom -> (atom, n - 1)
+
+  in match inner expr n with
+  | (expr', n) ->
+    if n = -1
+    then expr'
+    else raise TraversalError

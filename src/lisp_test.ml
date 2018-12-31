@@ -116,4 +116,28 @@ let () =
 
   assert (Variable "+" = (traverse (Parser.parse "(let [(x 5) (y 15)] (+ x y))") 4));
 
+  assert(
+    Parser.parse "(let [(x 5) (y 15)] (NEW x y))" =
+    replace_nth
+      (Parser.parse "(let [(x 5) (y 15)] (+ x y))")
+      4
+      (Variable "NEW")
+  );
+
+  assert(
+    Parser.parse "(let [(x 5) (y 15)] (+ x NEW))" =
+    replace_nth
+      (Parser.parse "(let [(x 5) (y 15)] (+ x y))")
+      6
+      (Variable "NEW")
+  );
+
+  assert(
+    Parser.parse "(let [(x 5) (y NEW)] (+ x y))" =
+    replace_nth
+      (Parser.parse "(let [(x 5) (y 15)] (+ x y))")
+      2
+      (Variable "NEW")
+  );
+
   print_endline "All tests passed."
