@@ -116,30 +116,39 @@ let () =
 
   assert (Variable "+" = (traverse (Parser.parse "(let [(x 5) (y 15)] (+ x y))") 4));
 
-  assert(
+  assert (
     Parser.parse "(let [(x 5) (y 15)] (NEW x y))" =
     replace
-      { expr = (Parser.parse "(let [(x 5) (y 15)] (+ x y))") ;
-        desired = (Variable "NEW") ;
-        pos = 4 ;
+      { expr = (Parser.parse "(let [(x 5) (y 15)] (+ x y))");
+        desired = (Variable "NEW");
+        pos = 4;
       }
   );
 
-  assert(
+  assert (
     Parser.parse "(let [(x 5) (y 15)] (+ x NEW))" =
     replace
-      { expr = (Parser.parse "(let [(x 5) (y 15)] (+ x y))") ;
-        desired = (Variable "NEW") ;
-        pos = 6 ;
+      { expr = (Parser.parse "(let [(x 5) (y 15)] (+ x y))");
+        desired = (Variable "NEW");
+        pos = 6;
       }
   );
 
-  assert(
+  assert (
     Parser.parse "(let [(x 5) (y NEW)] (+ x y))" =
     replace
-      { expr = (Parser.parse "(let [(x 5) (y 15)] (+ x y))") ;
-        desired = (Variable "NEW") ;
-        pos = 2 ;
+      { expr = (Parser.parse "(let [(x 5) (y 15)] (+ x y))");
+        desired = (Variable "NEW");
+        pos = 2;
+      }
+  );
+
+  assert (
+    Parser.parse "(let [(x 10)] (+ x 15))" =
+    abstract
+      { expr = (Parser.parse "(+ 10 15)");
+        name = "x";
+        pos = 2;
       }
   );
 

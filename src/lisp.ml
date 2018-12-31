@@ -175,9 +175,9 @@ let traverse expr pos =
   | Some e -> e
 
 type replace_opts =
-  { expr : expression ;
-    desired : expression ;
-    pos  : int ;
+  { expr : expression;
+    desired : expression;
+    pos  : int;
   }
 let replace { expr ; desired ; pos } =
   let rec inner_multi exprs n =
@@ -235,3 +235,16 @@ let replace { expr ; desired ; pos } =
     if n = -1
     then expr'
     else raise TraversalError
+
+type abstract_opts =
+  { expr : expression;
+    name : string;
+    pos  : int;
+  }
+let abstract { expr ; name ; pos } =
+  let value = traverse expr pos
+  and body = replace { expr = expr;
+                       pos = pos;
+                       desired = Variable name;
+                     }
+  in LetExpression ([(name, value)], body)
