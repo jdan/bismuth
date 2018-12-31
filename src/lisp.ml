@@ -81,7 +81,7 @@ let rec value_of_expression (env: env) = function
   | LetExpression (bindings, body) -> _let bindings body |> value_of_expression env
   | MultiApplication (f, args) -> _apply f args |> value_of_expression env
 
-let rec string_of_expression = function 
+let rec string_of_expression = function
   | Nil -> "nil"
   | Number v -> string_of_int v
   | String v -> "\"" ^ v ^ "\""
@@ -93,11 +93,11 @@ let rec string_of_expression = function
   | IfExpression (e1, e2, e3) -> "(if " ^ String.concat " " (List.map string_of_expression [e1; e2; e3]) ^ ")"
   | LetExpression (bindings, body) ->
     let string_of_binding (b, v) = "(" ^ b ^ " " ^ string_of_expression v ^ ")"
-    in 
-    "(let [" ^ 
-    String.concat " " (List.map string_of_binding bindings) ^ 
-    "] " ^ 
-    string_of_expression body ^ 
+    in
+    "(let [" ^
+    String.concat " " (List.map string_of_binding bindings) ^
+    "] " ^
+    string_of_expression body ^
     ")"
   | MultiApplication (f, args) ->
     "(" ^
@@ -145,3 +145,31 @@ let rec swap_variable a b = function
   | LetExpression (bindings, body) -> swap_variable a b (_let bindings body)
   | MultiApplication (f, args) -> swap_variable a b (_apply f args)
   | expr -> expr
+
+let rec flatten = function
+  | Application (e1, e2) as orig ->
+    [orig] 
+    @ flatten e1 
+    @ flatten e2
+  | Abstraction (_, e) as orig ->
+    [orig] 
+    @ flatten e
+  | IfExpression (e1, e2, e3) as orig ->
+    [orig] @ flatten e1 @ flatten e2 @ flatten e3
+  | LetExpression (bindings, body) as orig ->
+    [orig] 
+    @ (List.map (fun (_, e) -> flatten e) bindings |> List.concat)
+    @ flatten body
+  | MultiApplication (e, es) as orig ->
+    [orig] 
+    @ flatten e
+    @ (List.map flatten es |> List.concat)
+  | atom -> [atom] 
+
+let num_exprs expr = flatten expr |> List.length
+
+exception TraversalError
+let traverse expr pos =
+  match List.nth_opt (flatten expr) pos with
+  | None -> raise TraversalError
+  | Some e -> e

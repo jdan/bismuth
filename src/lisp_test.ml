@@ -93,4 +93,27 @@ let () =
   assert ("(let [(x 5) (y 15)] (+ x y))" = (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_expression));
   assert ("(if #t 3 5)" = (Parser.parse "(if #t \n 3  \t 5)" |> string_of_expression));
 
+  assert (7 = (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> num_exprs));
+
+  assert (
+    (Parser.parse "(let [(x 5) (y 15)] (+ x y))"
+     |> flatten
+     |> List.mapi (fun i e ->
+         "("
+         ^ string_of_int i
+         ^ ") "
+         ^ string_of_expression e
+       )
+    )
+    = [ "(0) (let [(x 5) (y 15)] (+ x y))"
+      ; "(1) 5"
+      ; "(2) 15"
+      ; "(3) (+ x y)"
+      ; "(4) +"
+      ; "(5) x"
+      ; "(6) y"
+      ]);
+
+  assert (Variable "+" = (traverse (Parser.parse "(let [(x 5) (y 15)] (+ x y))") 4));
+
   print_endline "All tests passed."
