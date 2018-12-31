@@ -148,20 +148,20 @@ let rec swap_variable a b = function
 
 let rec flatten = function
   | Application (e1, e2) as orig ->
-    [orig] 
-    @ flatten e1 
+    [orig]
+    @ flatten e1
     @ flatten e2
   | Abstraction (_, e) as orig ->
-    [orig] 
+    [orig]
     @ flatten e
   | IfExpression (e1, e2, e3) as orig ->
     [orig] @ flatten e1 @ flatten e2 @ flatten e3
   | LetExpression (bindings, body) as orig ->
-    [orig] 
+    [orig]
     @ (List.map (fun (_, e) -> flatten e) bindings |> List.concat)
     @ flatten body
   | MultiApplication (e, es) as orig ->
-    [orig] 
+    [orig]
     @ flatten e
     @ (List.map flatten es |> List.concat)
   | atom -> [atom]
@@ -174,7 +174,12 @@ let traverse expr pos =
   | None -> raise TraversalError
   | Some e -> e
 
-let replace_nth expr n new_expr =
+type replace_opts =
+  { expr : expression ;
+    desired : expression ;
+    pos  : int ;
+  }
+let replace { expr ; desired ; pos } =
   let rec inner_multi exprs n =
     (* apply inner to a sequence of exprs and return the final n *)
     let (exprs', n') = List.fold_left
@@ -190,7 +195,7 @@ let replace_nth expr n new_expr =
     if n < 0
     then (expr, -1) (* we could probably keep a third `done` flag around *)
     else if n = 0
-    then (new_expr, -1)
+    then (desired, -1)
     else match expr with
       | Application (e1, e2) -> (
           match inner_multi [e1; e2] (n - 1) with
@@ -225,7 +230,7 @@ let replace_nth expr n new_expr =
 
       | atom -> (atom, n - 1)
 
-  in match inner expr n with
+  in match inner expr pos with
   | (expr', n) ->
     if n = -1
     then expr'
