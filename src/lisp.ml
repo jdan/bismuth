@@ -30,18 +30,19 @@ let string_of_value = function
   | BoolVal v -> string_of_bool v
   | FuncVal _ -> "#func"
 
+(* let x = e in f <=> ((fn (x) f) e) *) 
 let rec _let bindings body =
-  (* let x = e in f <=> ((fn (x) f) e) *)
-  let single binding exp body =
-    Application (( Abstraction ([binding], body)
-                 , [exp]
-                 ))
-  in match bindings with
-  | [] -> body
-  | (v, e)::bindings' ->
-    single v e (
-      _let bindings' body
-    )
+  let (names, values) = List.fold_left
+      (fun (names', values') (name', value') ->
+         ( name'::names'
+         , value'::values'
+         ))
+      ([], [])
+      bindings
+  in
+  Application ( Abstraction (names, body)
+              , values
+              )
 
 exception RuntimeException of string
 let rec value_of_expression (env: env) = function
@@ -88,8 +89,8 @@ let rec string_of_expression = function
     ") " ^
     string_of_expression e ^
     ")"
-  | Application (e1, es) -> 
-    "(" ^  
+  | Application (e1, es) ->
+    "(" ^
     string_of_expression e1 ^ " " ^
     String.concat " " (List.map string_of_expression es) ^
     ")"
