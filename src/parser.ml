@@ -52,18 +52,18 @@ and abstraction input =
   ( lparen >>
     token "fn" >>
     lparen >>
-    binding >>= fun binding ->
+    many1 binding >>= fun bindings ->
     rparen >>
     expr >>= fun body ->
     rparen >>
-    return (Abstraction (binding, body))
+    return (Abstraction (bindings, body))
   ) input
 and application input =
   ( lparen >>
     expr >>= fun fn ->
     many1 expr >>= fun args ->
     rparen >>
-    return (MultiApplication (fn, args))
+    return (Application (fn, args))
   ) input
 and expr input =
   ( nil_lit <|> number_lit <|> string_lit <|> boolean_lit <|> variable_lit <|>

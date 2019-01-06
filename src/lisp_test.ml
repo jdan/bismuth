@@ -18,12 +18,12 @@ let () =
   assert (NumVal 42 =
           eval
             (Application (
-                (Abstraction ("arg", Variable "arg"))
-              , Number 42)
+                (Abstraction (["arg"], Variable "arg"))
+              , [Number 42])
             ));
 
   assert_throws (fun () -> eval (
-      Application ((String "Not a fn"), Nil))
+      Application ((String "Not a fn"), [Nil]))
     );
 
   assert (NumVal 10 = eval (
@@ -34,37 +34,35 @@ let () =
       IfExpression ((String "not a bool"), Nil, Nil)));
 
   assert (NumVal 42 = eval (
-      Application (Application (
-          (Variable "+"), Number 10), Number 32)));
+      Application ( Variable "+"
+                  , [Number 10; Number 32])));
   assert_throws (fun () -> eval (
-      Application (Application (
-          (Variable "+"), Number 10), String "not a number")));
+      Application ( Variable "+"
+                  , [Number 10; String "not a number"])));
 
   assert (NumVal 3 = eval (
-      Application (Application (
-          (Variable "/"), Number 32), Number 10)));
+      Application ( Variable "/"
+                  , [Number 32; Number 10])));
   assert (NumVal 14 = eval (
-      Application (Application (
-          (Variable "-"), Number 16), Number 2)));
-
-  (* _apply *)
+      Application ( Variable "-"
+                  , [Number 16; Number 2])));
   assert (NumVal 900 = eval (
-      _apply (Variable "-") [Number 1000; Number 100]
-    ));
+      Application ( Variable "-"
+                  , [Number 1000; Number 100])));
 
-  let sub3 = FuncVal (fun a -> FuncVal (fun b -> FuncVal (fun c ->
-      match (a, b, c) with
-      | (NumVal a', NumVal b', NumVal c') -> NumVal (a' - b' - c')
-      | _ -> raise (RuntimeException "Sorry"))))
+  let sub3 = FuncVal (function
+      | [NumVal a'; NumVal b'; NumVal c'] -> NumVal (a' - b' - c')
+      | _ -> raise (RuntimeException "Sorry"))
   in assert (NumVal 890 = value_of_expression [("-", sub3)] (
-      _apply (Variable "-") [Number 1000; Number 100; Number 10]
-    ));
+      Application ( Variable "-",
+                    [Number 1000; Number 100; Number 10])));
 
   assert (NumVal 42 = eval (
       _let [("x", Number 10); ("y", Number 32)] (
-        _apply (Variable "+") [Variable "x"; Variable "y"]
-      )
-    ));
+        Application ( Variable "+"
+                    , [Variable "x"; Variable "y"]
+                    )
+      )));
 
   assert (Number 10 = swap_variable "x" "y" (Number 10));
   assert (Variable "y" = swap_variable "x" "y" (Variable "x"));
@@ -72,15 +70,16 @@ let () =
 
   let orig =
     Abstraction
-      ( "x"
-      , MultiApplication (Variable "+", [Variable "x"; Variable "z"])
+      ( ["x"]
+      , Application (Variable "+", [Variable "x"; Variable "z"])
       )
   in (
     assert (swap_variable "z" "q" orig =
             Abstraction
-              ( "x"
-              , _apply (Variable "+") [Variable "x"; Variable "q"]
-              )
+              ( ["x"]
+              , Application ( Variable "+"
+                            , [Variable "x"; Variable "q"]
+                            ))
            );
     assert (swap_variable "x" "q" orig = orig);
   );
