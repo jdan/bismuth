@@ -88,7 +88,7 @@ let rec value_of_expression (env: env) = function
 
 let rec env_of_definition env = function
   | ValueDefinition (name, body) ->
-    (name, value_of_expression env body)::env 
+    (name, value_of_expression env body)::env
   | FunctionDefinition (name, args, definitions, body) ->
     let rec func = FuncVal (fun values ->
         let env' = (name, func)::env                  (* extend name -> func *)
