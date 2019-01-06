@@ -164,7 +164,11 @@ let rec flatten = function
     [orig]
     @ flatten e
     @ (List.map flatten es |> List.concat)
-  | atom -> [atom]
+  | Number v -> [Number v]
+  | String v -> [String v]
+  | Boolean v -> [Boolean v]
+  | Variable v -> [Variable v]
+  | Nil -> [Nil]
 
 let num_exprs expr = flatten expr |> List.length
 
@@ -228,7 +232,11 @@ let replace { expr ; desired ; pos } =
         in let (es', n'') = inner_multi es n'
         in (MultiApplication (e', es'), n'')
 
-      | atom -> (atom, n - 1)
+      | Number v -> (Number v, n - 1)
+      | String v -> (String v, n - 1)
+      | Boolean v -> (Boolean v, n - 1)
+      | Variable v -> (Variable v, n - 1)
+      | Nil -> (Nil, n - 1)
 
   in match inner expr pos with
   | (expr', n) ->
