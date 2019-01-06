@@ -92,6 +92,71 @@ let () =
   assert ("(let [(x 5) (y 15)] (+ x y))" = (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_expression));
   assert ("(if #t 3 5)" = (Parser.parse "(if #t \n 3  \t 5)" |> string_of_expression));
 
+  assert (NumVal 42 =
+          eval_program
+            [ Definition (ValueDefinition ("a", Number 10))
+            ; Definition (ValueDefinition ("b", Number 32))
+            ; Expression (Application (Variable "+", [Variable "a"; Variable "b"]))
+            ]
+         );
+
+  (* Recursive fibonacci *)
+  assert (NumVal 120 =
+          eval_program
+            [ Definition
+                (FunctionDefinition
+                   ("fib", ["n"], [],
+                    IfExpression
+                      ( Application (Variable "=", [Number 0; Variable "n"])
+                      , Number 1
+                      , Application
+                          ( Variable "*"
+                          , [ Variable "n"
+                            ; Application
+                                ( Variable "fib"
+                                , [Application (Variable "-", [Variable "n"; Number 1])]
+                                )
+                            ]
+                          )
+                      )))
+            ; Expression (Application (Variable "fib", [Number 5]))
+            ]
+         );
+
+  (* Tail-call optimized recursive fibonacci *)
+  let fib = [ Definition
+                (FunctionDefinition
+                   ("fib", ["n"],
+                    [ FunctionDefinition ("inner", ["n"; "acc"], [], (
+                          IfExpression
+                            ( Application (Variable "=", [Number 0; Variable "n"])
+                            , Variable "acc"
+                            , Application
+                                ( Variable "inner"
+                                , [ Application (Variable "-", [Variable "n"; Number 1])
+                                  ; Application (Variable "*", [Variable "acc"; Variable "n"])
+                                  ]
+                                )
+                            )))
+                    ],
+                    Application (Variable "inner", [Variable "n"; Number 1])
+                   ))
+            ; Expression (Application (Variable "fib", [Number 5]))
+            ]
+  in (
+    assert (NumVal 120 = eval_program fib);
+    assert (
+      let (_, env) = value_env_of_program stdlib fib
+      in let env_increase = List.length env - List.length stdlib
+      in 1 = env_increase   (* assert inner is not in `env` *)
+    )
+  );
+
+  (* TODO: test that
+     - arguments can be overwritten by inner definitions
+     - (define (f f) f)
+  *)
+
   assert (7 = (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> num_exprs));
 
   assert (

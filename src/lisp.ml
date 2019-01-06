@@ -1,18 +1,23 @@
 type expression =
-  (* Values *)
   | Nil
   | Number of int
   | String of string
   | Boolean of bool
-
-  (* Other stuff *)
   | Variable of string
   | Abstraction of string list * expression
   | Application of expression * expression list
-
-  (* Special forms *)
   | IfExpression of expression * expression * expression
   | LetExpression of (string * expression) list * expression
+
+type definition =
+  | ValueDefinition of string * expression
+  | FunctionDefinition of string * string list * definition list * expression
+
+type form =
+  | Definition of definition
+  | Expression of expression
+
+type program = form list
 
 type value =
   | NilVal
@@ -23,6 +28,8 @@ type value =
 
 type env = (string * value) list
 
+type value_env = value * env
+
 let string_of_value = function
   | NilVal -> "nil"
   | NumVal v -> string_of_int v
@@ -30,7 +37,7 @@ let string_of_value = function
   | BoolVal v -> string_of_bool v
   | FuncVal _ -> "#func"
 
-(* let x = e in f <=> ((fn (x) f) e) *) 
+(* let x = e in f <=> ((fn (x) f) e) *)
 let rec _let bindings body =
   let (names, values) = List.fold_left
       (fun (names', values') (name', value') ->
@@ -44,6 +51,9 @@ let rec _let bindings body =
               , values
               )
 
+let extend_env env names values =
+  List.map2 (fun a b -> (a, b)) names values @ env
+
 exception RuntimeException of string
 let rec value_of_expression (env: env) = function
   | Nil -> NilVal
@@ -54,8 +64,8 @@ let rec value_of_expression (env: env) = function
       raise (RuntimeException ("Unbound variable: " ^ v))
     )
   | Abstraction (args, e) ->
-    FuncVal (fun in_args ->
-        let env' = List.map2 (fun a b -> (a, b)) args in_args @ env
+    FuncVal (fun values ->
+        let env' = extend_env env args values
         in value_of_expression env' e
       )
   | Application (e1, es) -> (
@@ -75,6 +85,36 @@ let rec value_of_expression (env: env) = function
     )
   (* _let and _apply are basically transformations *)
   | LetExpression (bindings, body) -> _let bindings body |> value_of_expression env
+
+let rec env_of_definition env = function
+  | ValueDefinition (name, body) ->
+    (name, value_of_expression env body)::env 
+  | FunctionDefinition (name, args, definitions, body) ->
+    let rec func = FuncVal (fun values ->
+        let env' = (name, func)::env                  (* extend name -> func *)
+        in let env'' = extend_env env' args values    (* extend arg -> val for all args *)
+        in let env''' =                               (* extend env for all definitions *)
+             List.fold_left
+               (fun acc def -> env_of_definition acc def)
+               env''
+               definitions
+        in
+        value_of_expression env''' body
+      )
+    in (name, func)::env
+
+let value_env_of_form env = function
+  | Definition def -> ((NilVal, env_of_definition env def): value_env)
+  | Expression expr -> (value_of_expression env expr, env)
+
+let value_env_of_program env =
+  List.fold_left
+    (fun (value, env) form -> value_env_of_form env form)
+    (NilVal, env)
+
+let value_of_program env (program: program) =
+  let (value, _) = value_env_of_program env program
+  in value
 
 let rec string_of_expression = function
   | Nil -> "nil"
@@ -113,9 +153,14 @@ let stdlib: env = [ ("+", func_of_binary_op (+))
                   ; ("-", func_of_binary_op (-))
                   ; ("*", func_of_binary_op ( * ))
                   ; ("/", func_of_binary_op (/))
+                  ; ("=", FuncVal (function
+                         | [NumVal a; NumVal b] -> BoolVal (a = b)
+                         | _ -> raise (RuntimeException "Expected exactly two ints."))
+                    )
                   ]
 
 let eval = value_of_expression stdlib
+let eval_program = value_of_program stdlib
 
 (* Transformations *)
 let rec swap_variable a b = function
