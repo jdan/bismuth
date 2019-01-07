@@ -17,7 +17,7 @@ type form =
   | Definition of definition
   | Expression of expression
 
-type program = form list
+type program = Program of form list
 
 type value =
   | NilVal
@@ -107,12 +107,13 @@ let value_env_of_form env = function
   | Definition def -> ((NilVal, env_of_definition env def): value_env)
   | Expression expr -> (value_of_expression env expr, env)
 
-let value_env_of_program env =
+let value_env_of_program env (Program forms)=
   List.fold_left
     (fun (value, env) form -> value_env_of_form env form)
     (NilVal, env)
+    forms
 
-let value_of_program env (program: program) =
+let value_of_program env program =
   let (value, _) = value_env_of_program env program
   in value
 
@@ -144,6 +145,22 @@ let rec string_of_expression = function
     string_of_expression body ^
     ")"
 
+let rec string_of_definition = function
+  | ValueDefinition (name, value) ->
+    "(define " ^ name ^ " " ^ string_of_expression value ^ ")" 
+  | FunctionDefinition (name, args, defs, body) ->
+    "(define (" ^
+    name ^ " " ^ (String.concat " " args) ^ ") " ^
+    (String.concat "\n" (List.map string_of_definition defs)) ^
+    string_of_expression body ^ ")"
+
+let string_of_form = function
+  | Expression expr -> string_of_expression expr
+  | Definition def -> string_of_definition def
+
+let string_of_program (Program forms) =
+  String.concat "\n" (List.map string_of_form forms)
+
 let func_of_binary_op op =
   FuncVal (function
       | [NumVal a; NumVal b] -> NumVal (op a b)
@@ -159,8 +176,8 @@ let stdlib: env = [ ("+", func_of_binary_op (+))
                     )
                   ]
 
-let eval = value_of_expression stdlib
-let eval_program = value_of_program stdlib
+let eval = value_of_program stdlib
+let eval_expression = value_of_expression stdlib
 
 (* Transformations *)
 let rec swap_variable a b = function

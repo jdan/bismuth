@@ -14,7 +14,7 @@ let string_lit =
   in spaces >> between quot quot (many1 any) => implode % (fun s -> Lisp.String s)
 
 let binding =
-  let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?']
+  let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?'; '=']
   in spaces >> many1 (digit <|> letter <|> symbol) => implode
 
 let variable_lit =
@@ -63,7 +63,7 @@ and application input =
     expression >>= fun fn ->
     many1 expression >>= fun args ->
     rparen >>
-    return (Application (fn, args)) 
+    return (Application (fn, args))
   ) input
 and expression input =
   ( nil_lit <|> number_lit <|> string_lit <|> boolean_lit <|> variable_lit <|>
@@ -97,17 +97,20 @@ and form_definition input =
   (
     definition >>= fun def -> return (Definition def)
   ) input
-and form_expression input = 
+and form_expression input =
   (
     expression >>= fun expr -> return (Expression expr)
   ) input
 and form input = (form_definition <|> form_expression) input
 and program input =
   (
-    many form >>= fun forms -> return (Program forms)
+    many1 form >>= fun forms -> return (Program forms)
   ) input
 
 exception ParseException
+let parse_expression input = match Opal.parse expression (LazyStream.of_string input) with
+  | Some res -> res
+  | None -> raise ParseException
 let parse input = match Opal.parse program (LazyStream.of_string input) with
   | Some res -> res
   | None -> raise ParseException
