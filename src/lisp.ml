@@ -198,31 +198,48 @@ let rec swap_variable a b = function
   | LetExpression (bindings, body) -> swap_variable a b (_let bindings body)
   | expr -> expr
 
-let rec flatten = function
-  | Application (e, es) as orig ->
-    [orig]
-    @ flatten e
-    @ (List.map flatten es |> List.concat)
-  | Abstraction (_, e) as orig ->
-    [orig]
-    @ flatten e
-  | IfExpression (e1, e2, e3) as orig ->
-    [orig] @ flatten e1 @ flatten e2 @ flatten e3
-  | LetExpression (bindings, body) as orig ->
-    [orig]
-    @ (List.map (fun (_, e) -> flatten e) bindings |> List.concat)
-    @ flatten body
-  | Number v -> [Number v]
-  | String v -> [String v]
-  | Boolean v -> [Boolean v]
-  | Variable v -> [Variable v]
-  | Nil -> [Nil]
+let flatten (Program forms) =  
+  let flatten_form =
+    let rec flatten_expr = function
+      | Application (e, es) as orig ->
+        [Expression orig]
+        @ flatten_expr e
+        @ (List.map flatten_expr es |> List.concat)
+      | Abstraction (_, e) as orig ->
+        [Expression orig]
+        @ flatten_expr e
+      | IfExpression (e1, e2, e3) as orig ->
+        [Expression orig] @ flatten_expr e1 @ flatten_expr e2 @ flatten_expr e3
+      | LetExpression (bindings, body) as orig ->
+        [Expression orig]
+        @ (List.map (fun (_, e) -> flatten_expr e) bindings |> List.concat)
+        @ flatten_expr body
+      | Number v -> [Expression (Number v)]
+      | String v -> [Expression (String v)]
+      | Boolean v -> [Expression (Boolean v)]
+      | Variable v -> [Expression (Variable v)]
+      | Nil -> [Expression Nil]
+    and flatten_def = function
+      | ValueDefinition (_, expr) as orig ->
+        (Definition orig) :: flatten_expr expr
+      | FunctionDefinition (_, _, defs, expr) as orig ->
+        (Definition orig) ::
+        (List.concat (List.map flatten_def defs) @
+         flatten_expr expr)
+    in function
+      | Definition d -> flatten_def d
+      | Expression e -> flatten_expr e
 
-let num_exprs expr = flatten expr |> List.length
+  in List.map flatten_form forms |> List.concat
+
+let num_exprs prog =
+  flatten prog
+  |> List.filter (function Expression _ -> true | Definition _ -> false)
+  |> List.length
 
 exception TraversalError
-let traverse expr pos =
-  match List.nth_opt (flatten expr) pos with
+let traverse prog pos =
+  match List.nth_opt (flatten prog) pos with
   | None -> raise TraversalError
   | Some e -> e
 
@@ -293,7 +310,9 @@ type abstract_opts =
     pos  : int;
   }
 let abstract { expr ; name ; pos } =
-  let value = traverse expr pos
+  let value = match traverse (Program [Expression expr]) pos with
+    | Expression e -> e
+    | Definition d -> raise TraversalError
   and body = replace { expr = expr;
                        pos = pos;
                        desired = Variable name;

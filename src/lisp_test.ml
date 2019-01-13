@@ -136,16 +136,16 @@ let () =
      - (define (f f) f)
   *)
 
-  assert (7 = (Parser.parse_expression "(let [(x 5) (y 15)] (+ x y))" |> num_exprs));
+  assert (7 = (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> num_exprs));
 
   assert (
-    (Parser.parse_expression "(let [(x 5) (y 15)] (+ x y))"
+    (Parser.parse "(let [(x 5) (y 15)] (+ x y))"
      |> flatten
      |> List.mapi (fun i e ->
          "("
          ^ string_of_int i
          ^ ") "
-         ^ string_of_expression e
+         ^ string_of_form e
        )
     )
     = [ "(0) (let [(x 5) (y 15)] (+ x y))"
@@ -157,7 +157,8 @@ let () =
       ; "(6) y"
       ]);
 
-  assert (Variable "+" = (traverse (Parser.parse_expression "(let [(x 5) (y 15)] (+ x y))") 4));
+  assert (Expression (Variable "+") =
+          traverse (Parser.parse "(let [(x 5) (y 15)] (+ x y))") 4);
 
   assert (
     Parser.parse_expression "(let [(x 5) (y 15)] (NEW x y))" =
