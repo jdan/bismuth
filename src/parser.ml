@@ -14,7 +14,7 @@ let string_lit =
   in spaces >> between quot quot (many1 any) => implode % (fun s -> Lisp.String s)
 
 let binding =
-  let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?'; '=']
+  let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?']
   in spaces >> many1 (digit <|> letter <|> symbol) => implode
 
 let variable_lit =
@@ -26,16 +26,16 @@ let rparen = token ")"
 let rec if_expression input =
   ( lparen >>
     token "if" >>
-    expression >>= fun condition ->
-    expression >>= fun consequent ->
-    expression >>= fun alternate ->
+    expr >>= fun condition ->
+    expr >>= fun consequent ->
+    expr >>= fun alternate ->
     rparen >>
     return (IfExpression (condition, consequent, alternate))
   ) input
 and _let_expression input =
   let single = ( lparen >>
                  binding >>= fun binding ->
-                 expression >>= fun value ->
+                 expr >>= fun value ->
                  rparen >>
                  return (binding, value)
                ) in
@@ -44,7 +44,7 @@ and _let_expression input =
     token "[" >>
     many1 single >>= fun bindings ->
     token "]" >>
-    expression >>= fun body ->
+    expr >>= fun body ->
     rparen >>
     return (LetExpression (bindings, body))
   ) input
@@ -54,63 +54,23 @@ and abstraction input =
     lparen >>
     many1 binding >>= fun bindings ->
     rparen >>
-    expression >>= fun body ->
+    expr >>= fun body ->
     rparen >>
     return (Abstraction (bindings, body))
   ) input
 and application input =
   ( lparen >>
-    expression >>= fun fn ->
-    many1 expression >>= fun args ->
+    expr >>= fun fn ->
+    many1 expr >>= fun args ->
     rparen >>
     return (Application (fn, args))
   ) input
-and expression input =
+and expr input =
   ( nil_lit <|> number_lit <|> string_lit <|> boolean_lit <|> variable_lit <|>
     if_expression <|> _let_expression <|> abstraction <|> application
   ) input
 
-let rec value_definition input =
-  (
-    lparen >>
-    token "define" >>
-    binding >>= fun binding ->
-    expression >>= fun value ->
-    rparen >>
-    return (ValueDefinition (binding, value))
-  ) input
-and function_definition input =
-  (
-    lparen >>
-    token "define" >>
-    lparen >>
-    binding >>= fun name ->
-    many binding >>= fun args ->
-    rparen >>
-    many definition >>= fun defs ->
-    expression >>= fun expr ->
-    rparen >>
-    return (FunctionDefinition (name, args, defs, expr))
-  ) input
-and definition input = (value_definition <|> function_definition) input
-and form_definition input =
-  (
-    definition >>= fun def -> return (Definition def)
-  ) input
-and form_expression input =
-  (
-    expression >>= fun expr -> return (Expression expr)
-  ) input
-and form input = (form_definition <|> form_expression) input
-and program input =
-  (
-    many1 form >>= fun forms -> return (Program forms)
-  ) input
-
 exception ParseException
-let parse_expression input = match Opal.parse expression (LazyStream.of_string input) with
-  | Some res -> res
-  | None -> raise ParseException
-let parse input = match Opal.parse program (LazyStream.of_string input) with
+let parse input = match Opal.parse expr (LazyStream.of_string input) with
   | Some res -> res
   | None -> raise ParseException

@@ -1,23 +1,18 @@
 type expression =
+  (* Values *)
   | Nil
   | Number of int
   | String of string
   | Boolean of bool
+
+  (* Other stuff *)
   | Variable of string
   | Abstraction of string list * expression
   | Application of expression * expression list
+
+  (* Special forms *)
   | IfExpression of expression * expression * expression
   | LetExpression of (string * expression) list * expression
-
-type definition =
-  | ValueDefinition of string * expression
-  | FunctionDefinition of string * string list * definition list * expression
-
-type form =
-  | Definition of definition
-  | Expression of expression
-
-type program = Program of form list
 
 type value =
   | NilVal
@@ -28,8 +23,6 @@ type value =
 
 type env = (string * value) list
 
-type value_env = value * env
-
 let string_of_value = function
   | NilVal -> "nil"
   | NumVal v -> string_of_int v
@@ -37,7 +30,7 @@ let string_of_value = function
   | BoolVal v -> string_of_bool v
   | FuncVal _ -> "#func"
 
-(* let x = e in f <=> ((fn (x) f) e) *)
+(* let x = e in f <=> ((fn (x) f) e) *) 
 let rec _let bindings body =
   let (names, values) = List.fold_left
       (fun (names', values') (name', value') ->
@@ -51,9 +44,6 @@ let rec _let bindings body =
               , values
               )
 
-let extend_env env names values =
-  List.map2 (fun a b -> (a, b)) names values @ env
-
 exception RuntimeException of string
 let rec value_of_expression (env: env) = function
   | Nil -> NilVal
@@ -64,8 +54,8 @@ let rec value_of_expression (env: env) = function
       raise (RuntimeException ("Unbound variable: " ^ v))
     )
   | Abstraction (args, e) ->
-    FuncVal (fun values ->
-        let env' = extend_env env args values
+    FuncVal (fun in_args ->
+        let env' = List.map2 (fun a b -> (a, b)) args in_args @ env
         in value_of_expression env' e
       )
   | Application (e1, es) -> (
@@ -85,37 +75,6 @@ let rec value_of_expression (env: env) = function
     )
   (* _let and _apply are basically transformations *)
   | LetExpression (bindings, body) -> _let bindings body |> value_of_expression env
-
-let rec env_of_definition env = function
-  | ValueDefinition (name, body) ->
-    (name, value_of_expression env body)::env
-  | FunctionDefinition (name, args, definitions, body) ->
-    let rec func = FuncVal (fun values ->
-        let env' = (name, func)::env                  (* extend name -> func *)
-        in let env'' = extend_env env' args values    (* extend arg -> val for all args *)
-        in let env''' =                               (* extend env for all definitions *)
-             List.fold_left
-               (fun acc def -> env_of_definition acc def)
-               env''
-               definitions
-        in
-        value_of_expression env''' body
-      )
-    in (name, func)::env
-
-let value_env_of_form env = function
-  | Definition def -> ((NilVal, env_of_definition env def): value_env)
-  | Expression expr -> (value_of_expression env expr, env)
-
-let value_env_of_program env (Program forms)=
-  List.fold_left
-    (fun (value, env) form -> value_env_of_form env form)
-    (NilVal, env)
-    forms
-
-let value_of_program env program =
-  let (value, _) = value_env_of_program env program
-  in value
 
 let rec string_of_expression = function
   | Nil -> "nil"
@@ -145,22 +104,6 @@ let rec string_of_expression = function
     string_of_expression body ^
     ")"
 
-let rec string_of_definition = function
-  | ValueDefinition (name, value) ->
-    "(define " ^ name ^ " " ^ string_of_expression value ^ ")" 
-  | FunctionDefinition (name, args, defs, body) ->
-    "(define (" ^
-    name ^ " " ^ (String.concat " " args) ^ ") " ^
-    (String.concat "\n" (List.map string_of_definition defs)) ^
-    string_of_expression body ^ ")"
-
-let string_of_form = function
-  | Expression expr -> string_of_expression expr
-  | Definition def -> string_of_definition def
-
-let string_of_program (Program forms) =
-  String.concat "\n" (List.map string_of_form forms)
-
 let func_of_binary_op op =
   FuncVal (function
       | [NumVal a; NumVal b] -> NumVal (op a b)
@@ -170,14 +113,9 @@ let stdlib: env = [ ("+", func_of_binary_op (+))
                   ; ("-", func_of_binary_op (-))
                   ; ("*", func_of_binary_op ( * ))
                   ; ("/", func_of_binary_op (/))
-                  ; ("=", FuncVal (function
-                         | [NumVal a; NumVal b] -> BoolVal (a = b)
-                         | _ -> raise (RuntimeException "Expected exactly two ints."))
-                    )
                   ]
 
-let eval = value_of_program stdlib
-let eval_expression = value_of_expression stdlib
+let eval = value_of_expression stdlib
 
 (* Transformations *)
 let rec swap_variable a b = function
@@ -198,48 +136,31 @@ let rec swap_variable a b = function
   | LetExpression (bindings, body) -> swap_variable a b (_let bindings body)
   | expr -> expr
 
-let flatten (Program forms) =  
-  let flatten_form =
-    let rec flatten_expr = function
-      | Application (e, es) as orig ->
-        [Expression orig]
-        @ flatten_expr e
-        @ (List.map flatten_expr es |> List.concat)
-      | Abstraction (_, e) as orig ->
-        [Expression orig]
-        @ flatten_expr e
-      | IfExpression (e1, e2, e3) as orig ->
-        [Expression orig] @ flatten_expr e1 @ flatten_expr e2 @ flatten_expr e3
-      | LetExpression (bindings, body) as orig ->
-        [Expression orig]
-        @ (List.map (fun (_, e) -> flatten_expr e) bindings |> List.concat)
-        @ flatten_expr body
-      | Number v -> [Expression (Number v)]
-      | String v -> [Expression (String v)]
-      | Boolean v -> [Expression (Boolean v)]
-      | Variable v -> [Expression (Variable v)]
-      | Nil -> [Expression Nil]
-    and flatten_def = function
-      | ValueDefinition (_, expr) as orig ->
-        (Definition orig) :: flatten_expr expr
-      | FunctionDefinition (_, _, defs, expr) as orig ->
-        (Definition orig) ::
-        (List.concat (List.map flatten_def defs) @
-         flatten_expr expr)
-    in function
-      | Definition d -> flatten_def d
-      | Expression e -> flatten_expr e
+let rec flatten = function
+  | Application (e, es) as orig ->
+    [orig]
+    @ flatten e
+    @ (List.map flatten es |> List.concat)
+  | Abstraction (_, e) as orig ->
+    [orig]
+    @ flatten e
+  | IfExpression (e1, e2, e3) as orig ->
+    [orig] @ flatten e1 @ flatten e2 @ flatten e3
+  | LetExpression (bindings, body) as orig ->
+    [orig]
+    @ (List.map (fun (_, e) -> flatten e) bindings |> List.concat)
+    @ flatten body
+  | Number v -> [Number v]
+  | String v -> [String v]
+  | Boolean v -> [Boolean v]
+  | Variable v -> [Variable v]
+  | Nil -> [Nil]
 
-  in List.map flatten_form forms |> List.concat
-
-let num_exprs prog =
-  flatten prog
-  |> List.filter (function Expression _ -> true | Definition _ -> false)
-  |> List.length
+let num_exprs expr = flatten expr |> List.length
 
 exception TraversalError
-let traverse prog pos =
-  match List.nth_opt (flatten prog) pos with
+let traverse expr pos =
+  match List.nth_opt (flatten expr) pos with
   | None -> raise TraversalError
   | Some e -> e
 
@@ -310,9 +231,7 @@ type abstract_opts =
     pos  : int;
   }
 let abstract { expr ; name ; pos } =
-  let value = match traverse (Program [Expression expr]) pos with
-    | Expression e -> e
-    | Definition d -> raise TraversalError
+  let value = traverse expr pos
   and body = replace { expr = expr;
                        pos = pos;
                        desired = Variable name;
