@@ -65,13 +65,6 @@ let () =
       Application ( Variable "-",
                     [Number 1000; Number 100; Number 10])));
 
-  assert (NumVal 42 = eval [
-      _let [("x", Number 10); ("y", Number 32)] (
-        Application ( Variable "+"
-                    , [Variable "x"; Variable "y"]
-                    )
-      )]);
-
   assert (Number 10 = swap_variable "x" "y" (Number 10));
   assert (Variable "y" = swap_variable "x" "y" (Variable "x"));
   assert (Variable "z" = swap_variable "x" "y" (Variable "z"));
@@ -106,9 +99,9 @@ let () =
     (factorial 5)" |> eval)) ;
 
   assert ("(let [(x 5) (y 15)] (+ x y))" =
-          (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_expressions));
+          (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_program));
   assert ("(if #t 3 5)" =
-          (Parser.parse "(if #t \n 3  \t 5)" |> string_of_expressions));
+          (Parser.parse "(if #t \n 3  \t 5)" |> string_of_program));
   assert (7 =
           (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> num_exprs));
 

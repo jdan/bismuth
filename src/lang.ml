@@ -1,5 +1,4 @@
 type expression =
-  (* Values *)
   | Nil
   | Number of int
   | String of string
@@ -129,7 +128,7 @@ let rec string_of_expression = function
     "] " ^
     string_of_expression body ^
     ")"
-and string_of_expressions exprs =
+and string_of_program exprs =
   String.concat "\n" (List.map string_of_expression exprs)
 
 let func_of_binary_op op =
