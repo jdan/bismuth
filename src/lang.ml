@@ -131,21 +131,22 @@ let rec string_of_expression = function
 and string_of_program exprs =
   String.concat "\n" (List.map string_of_expression exprs)
 
-let func_of_binary_op op =
-  FuncVal (function
-      | [NumVal a; NumVal b] -> NumVal (op a b)
-      | _ -> raise (RuntimeException "Expected exactly two ints."))
+module Stdlib : sig
+  val all: env
+end = struct
+  let func_of_binary_op op =
+    FuncVal (function
+        | [NumVal a; NumVal b] -> op a b
+        | _ -> raise (RuntimeException "Expected exactly two ints."))
 
-let stdlib: env = [ ("+", func_of_binary_op (+))
-                  ; ("-", func_of_binary_op (-))
-                  ; ("*", func_of_binary_op ( * ))
-                  ; ("/", func_of_binary_op (/))
-                  ; ("=",
-                     (FuncVal (function
-                          | [NumVal a; NumVal b] -> BoolVal (a = b)
-                          | _ -> raise (RuntimeException "Expected exactly two ints."))
-                     ))
-                  ]
+  let all =
+    [ ("+", func_of_binary_op (fun a b -> NumVal (a + b)))
+    ; ("-", func_of_binary_op (fun a b -> NumVal (a - b)))
+    ; ("*", func_of_binary_op (fun a b -> NumVal (a * b)))
+    ; ("/", func_of_binary_op (fun a b -> NumVal (a / b)))
+    ; ("=", func_of_binary_op (fun a b -> BoolVal (a = b)))
+    ]
+end
 
-let eval exprs = match value_env_of_expressions stdlib exprs with
+let eval exprs = match value_env_of_expressions Stdlib.all exprs with
   | (v, _) -> v
