@@ -52,11 +52,22 @@ and abstraction input =
   ( lparen >>
     token "fn" >>
     lparen >>
-    many1 binding >>= fun bindings ->
+    many1 binding >>= fun args ->
     rparen >>
     expr >>= fun body ->
     rparen >>
-    return (Abstraction (bindings, body))
+    return (Abstraction (args, body))
+  ) input
+and named_abstraction input =
+  ( lparen >>
+    token "fun" >>
+    lparen >>
+    binding >>= fun name ->
+    many1 binding >>= fun args ->
+    rparen >>
+    many1 expr >>= fun seq ->
+    rparen >>
+    return (NamedAbstraction (name, args, seq))
   ) input
 and application input =
   ( lparen >>
@@ -67,10 +78,14 @@ and application input =
   ) input
 and expr input =
   ( nil_lit <|> number_lit <|> string_lit <|> boolean_lit <|> variable_lit <|>
-    if_expression <|> _let_expression <|> abstraction <|> application
+    if_expression <|> _let_expression <|> abstraction <|> named_abstraction <|> application
+  ) input
+and program input =
+  ( many expr >>= fun exprs ->
+    return exprs
   ) input
 
 exception ParseException
-let parse input = match Opal.parse expr (LazyStream.of_string input) with
+let parse input = match Opal.parse program (LazyStream.of_string input) with
   | Some res -> res
   | None -> raise ParseException

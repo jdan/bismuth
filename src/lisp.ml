@@ -4,13 +4,10 @@ type expression =
   | Number of int
   | String of string
   | Boolean of bool
-
-  (* Other stuff *)
   | Variable of string
   | Abstraction of string list * expression
+  | NamedAbstraction of string * string list * expression list
   | Application of expression * expression list
-
-  (* Special forms *)
   | IfExpression of expression * expression * expression
   | LetExpression of (string * expression) list * expression
 
@@ -30,7 +27,7 @@ let string_of_value = function
   | BoolVal v -> string_of_bool v
   | FuncVal _ -> "#func"
 
-(* let x = e in f <=> ((fn (x) f) e) *) 
+(* let x = e in f <=> ((fn (x) f) e) *)
 let rec _let bindings body =
   let (names, values) = List.fold_left
       (fun (names', values') (name', value') ->
@@ -45,36 +42,55 @@ let rec _let bindings body =
               )
 
 exception RuntimeException of string
-let rec value_of_expression (env: env) = function
-  | Nil -> NilVal
-  | Number v -> NumVal v
-  | String v -> StrVal v
-  | Boolean v -> BoolVal v
+let rec value_env_of_expressions (env: env) =
+  List.fold_left
+    (fun (_, env') -> value_env_of_expression env')
+    (NilVal, env)
+
+and value_of_expression env expr = match value_env_of_expression env expr with
+  | (v, _) -> v
+
+and value_env_of_expression (env: env) expr =
+  let with_env v = (v, env)
+  in match expr with
+  | Nil -> NilVal |> with_env
+  | Number v -> NumVal v |> with_env
+  | String v -> StrVal v |> with_env
+  | Boolean v -> BoolVal v |> with_env
   | Variable v -> (try List.assoc v env with Not_found ->
       raise (RuntimeException ("Unbound variable: " ^ v))
-    )
+    ) |> with_env
   | Abstraction (args, e) ->
     FuncVal (fun in_args ->
         let env' = List.map2 (fun a b -> (a, b)) args in_args @ env
         in value_of_expression env' e
+      ) |> with_env
+  | NamedAbstraction (name, args, es) ->
+    let rec func = FuncVal (fun in_args ->
+        let env' = List.map2 (fun a b -> (a, b)) args in_args @ (name, func) :: env
+        in match value_env_of_expressions env' es with
+        | (v, _) -> v
       )
+    in (func, (name, func) :: env)
   | Application (e1, es) -> (
-      match value_of_expression env e1 with
-      | FuncVal f -> f (List.map (fun e -> value_of_expression env e) es)
-      | v -> raise (RuntimeException (
+      match value_env_of_expression env e1 with
+      | (FuncVal f, _) ->
+        f (List.map (value_of_expression env) es)
+      | (v, _) -> raise (RuntimeException (
           "Expected function, received " ^ string_of_value v ^
           ". Did you apply a function too many times?"))
-    )
+    ) |> with_env
   | IfExpression (e1, e2, e3) -> (
-      match value_of_expression env e1 with
-      | BoolVal true -> value_of_expression env e2
-      | BoolVal false -> value_of_expression env e3
-      | v -> raise (
+      match value_env_of_expression env e1 with
+      | (BoolVal true, _) -> value_env_of_expression env e2
+      | (BoolVal false, _) -> value_env_of_expression env e3
+      | (v, _) -> raise (
           RuntimeException ("Expected boolean, received " ^ string_of_value v)
         )
     )
   (* _let and _apply are basically transformations *)
-  | LetExpression (bindings, body) -> _let bindings body |> value_of_expression env
+  | LetExpression (bindings, body) ->
+    _let bindings body |> value_env_of_expression env
 
 let rec string_of_expression = function
   | Nil -> "nil"
@@ -88,6 +104,13 @@ let rec string_of_expression = function
     String.concat " " args ^
     ") " ^
     string_of_expression e ^
+    ")"
+  | NamedAbstraction (name, args, es) ->
+    "(fun (" ^
+    name ^ " " ^
+    String.concat " " args ^
+    ") " ^
+    String.concat " " (List.map string_of_expression es) ^
     ")"
   | Application (e1, es) ->
     "(" ^
@@ -103,6 +126,8 @@ let rec string_of_expression = function
     "] " ^
     string_of_expression body ^
     ")"
+and string_of_expressions exprs =
+  String.concat "\n" (List.map string_of_expression exprs)
 
 let func_of_binary_op op =
   FuncVal (function
@@ -115,7 +140,8 @@ let stdlib: env = [ ("+", func_of_binary_op (+))
                   ; ("/", func_of_binary_op (/))
                   ]
 
-let eval = value_of_expression stdlib
+let eval exprs = match value_env_of_expressions stdlib exprs with
+  | (v, _) -> v
 
 (* Transformations *)
 let rec swap_variable a b = function
@@ -136,31 +162,35 @@ let rec swap_variable a b = function
   | LetExpression (bindings, body) -> swap_variable a b (_let bindings body)
   | expr -> expr
 
-let rec flatten = function
+let rec flatten_one = function
   | Application (e, es) as orig ->
     [orig]
-    @ flatten e
-    @ (List.map flatten es |> List.concat)
+    @ flatten_one e
+    @ (List.map flatten_one es |> List.concat)
   | Abstraction (_, e) as orig ->
     [orig]
-    @ flatten e
+    @ flatten_one e
+  | NamedAbstraction (_, _, es) as orig ->
+    [orig]
+    @ (List.map flatten_one es |> List.concat)
   | IfExpression (e1, e2, e3) as orig ->
-    [orig] @ flatten e1 @ flatten e2 @ flatten e3
+    [orig] @ flatten_one e1 @ flatten_one e2 @ flatten_one e3
   | LetExpression (bindings, body) as orig ->
     [orig]
-    @ (List.map (fun (_, e) -> flatten e) bindings |> List.concat)
-    @ flatten body
+    @ (List.map (fun (_, e) -> flatten_one e) bindings |> List.concat)
+    @ flatten_one body
   | Number v -> [Number v]
   | String v -> [String v]
   | Boolean v -> [Boolean v]
   | Variable v -> [Variable v]
   | Nil -> [Nil]
+and flatten exprs = List.concat (List.map flatten_one exprs)
 
-let num_exprs expr = flatten expr |> List.length
+let num_exprs exprs = flatten exprs |> List.length
 
 exception TraversalError
-let traverse expr pos =
-  match List.nth_opt (flatten expr) pos with
+let traverse exprs pos =
+  match List.nth_opt (flatten exprs) pos with
   | None -> raise TraversalError
   | Some e -> e
 
@@ -198,6 +228,11 @@ let replace { expr ; desired ; pos } =
         in
         (Abstraction (args, e'), n')
 
+      | NamedAbstraction (name, args, es) -> (
+          match inner_multi es (n - 1) with
+          | (es', n') -> (NamedAbstraction (name, args, es'), n')
+        )
+
       | IfExpression (e1, e2, e3) -> (
           match inner_multi [e1; e2; e3] (n - 1) with
           | ([e1'; e2'; e3'], n') -> (IfExpression (e1', e2', e3'), n')
@@ -231,7 +266,7 @@ type abstract_opts =
     pos  : int;
   }
 let abstract { expr ; name ; pos } =
-  let value = traverse expr pos
+  let value = traverse [expr] pos
   and body = replace { expr = expr;
                        pos = pos;
                        desired = Variable name;
