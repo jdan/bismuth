@@ -10,6 +10,8 @@ type expression =
   | IfExpression of expression * expression * expression
   | LetExpression of (string * expression) list * expression
 
+type program = expression list
+
 type value =
   | NilVal
   | NumVal of int

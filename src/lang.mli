@@ -1,5 +1,5 @@
 type expression =
-    Nil
+  | Nil
   | Number of int
   | String of string
   | Boolean of bool
@@ -10,8 +10,10 @@ type expression =
   | IfExpression of expression * expression * expression
   | LetExpression of (string * expression) list * expression
 
+type program = expression list
+
 type value =
-    NilVal
+  | NilVal
   | NumVal of int
   | StrVal of string
   | BoolVal of bool
@@ -21,7 +23,6 @@ type env = (string * value) list
 val _let : (string * expression) list -> expression -> expression
 
 exception RuntimeException of string
-val string_of_expression : expression -> string
-val string_of_program : expression list -> string
+val string_of_program : program -> string
 val value_of_expression : env -> expression -> value
-val eval : expression list -> value
+val eval : program -> value

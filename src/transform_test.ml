@@ -30,7 +30,7 @@ let run () =
          "("
          ^ string_of_int i
          ^ ") "
-         ^ string_of_expression e
+         ^ string_of_program [e]
        )
     )
     = [ "(0) (let [(x 5) (y 15)] (+ x y))"
