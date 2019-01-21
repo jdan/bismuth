@@ -150,16 +150,36 @@ end = struct
     ; ("/", func_of_binary_op (fun a b -> NumVal (a / b)))
     ]
 
-  let list = 
+  let list =
+    let car = function
+      | [ConsVal (a, _)] -> a
+      | _ -> raise (RuntimeException "Expected a single cons.")
+    and cdr = function
+      | [ConsVal (_, b)] -> b
+      | _ -> raise (RuntimeException "Expected a single cons.")
+    in
     [ ("cons", FuncVal (function
           | [a; b] -> ConsVal (a, b)
           | _ -> raise (RuntimeException "Expected two values.")))
-    ; ("car", FuncVal (function
-           | [a; b] -> ConsVal (a, b)
-           | _ -> raise (RuntimeException "Expected two values.")))
-    ; ("cdr", FuncVal (function
-           | [ConsVal (_, b)] -> b
-           | _ -> raise (RuntimeException "Expected a single cons.")))
+    ; ("list", FuncVal (
+          let rec list = function
+            | [] -> NilVal
+            | x::xs -> ConsVal (x, list xs)
+          in list ))
+    ; ("car", FuncVal car)
+    ; ("cdr", FuncVal cdr)
+    ; ("caar", FuncVal (fun ls -> car [car ls]))
+    ; ("cadr", FuncVal (fun ls -> car [cdr ls]))
+    ; ("cdar", FuncVal (fun ls -> cdr [car ls]))
+    ; ("cddr", FuncVal (fun ls -> cdr [cdr ls]))
+    ; ("caaar", FuncVal (fun ls -> car [car [car ls]]))
+    ; ("caadr", FuncVal (fun ls -> car [car [cdr ls]]))
+    ; ("cadar", FuncVal (fun ls -> car [cdr [car ls]]))
+    ; ("caddr", FuncVal (fun ls -> car [cdr [cdr ls]]))
+    ; ("cdaar", FuncVal (fun ls -> cdr [car [car ls]]))
+    ; ("cdadr", FuncVal (fun ls -> cdr [car [cdr ls]]))
+    ; ("cddar", FuncVal (fun ls -> cdr [cdr [car ls]]))
+    ; ("cdddr", FuncVal (fun ls -> cdr [cdr [cdr ls]]))
     ]
 
   let all =
