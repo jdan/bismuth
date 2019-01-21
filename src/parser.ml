@@ -1,5 +1,5 @@
 open Opal
-open Lisp
+open Lang
 
 (* Atoms *)
 let nil_lit = token "nil" => (fun _ -> Nil)
@@ -11,7 +11,7 @@ let boolean_lit = true_lit <|> false_lit
 let number_lit = spaces >> many1 digit => implode % int_of_string % (fun i -> Number i)
 let string_lit =
   let quot = exactly '"'
-  in spaces >> between quot quot (many1 any) => implode % (fun s -> Lisp.String s)
+  in spaces >> between quot quot (many1 any) => implode % (fun s -> Lang.String s)
 
 let binding =
   let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?'; '=']

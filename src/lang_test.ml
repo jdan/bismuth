@@ -1,4 +1,4 @@
-open Lisp
+open Lang
 
 let assert_throws fn =
   assert (
@@ -103,7 +103,7 @@ let () =
           1
           (* n
              (factorial (- n 1)))))
-    (factorial 5)" |> eval)) ; 
+    (factorial 5)" |> eval)) ;
 
   assert ("(let [(x 5) (y 15)] (+ x y))" =
           (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_expressions));
