@@ -17,15 +17,17 @@ type value =
   | NumVal of int
   | StrVal of string
   | BoolVal of bool
+  | ConsVal of value * value
   | FuncVal of (value list -> value)
 
 type env = (string * value) list
 
-let string_of_value = function
+let rec string_of_value = function
   | NilVal -> "nil"
   | NumVal v -> string_of_int v
   | StrVal v -> "\"" ^ v ^ "\""
   | BoolVal v -> string_of_bool v
+  | ConsVal (a, b) -> "(" ^ string_of_value a ^ " . " ^ string_of_value b ^ ")"
   | FuncVal _ -> "#func"
 
 (* let x = e in f <=> ((fn (x) f) e) *)
@@ -141,12 +143,31 @@ end = struct
         | [NumVal a; NumVal b] -> op a b
         | _ -> raise (RuntimeException "Expected exactly two ints."))
 
-  let all =
+  let arith =
     [ ("+", func_of_binary_op (fun a b -> NumVal (a + b)))
     ; ("-", func_of_binary_op (fun a b -> NumVal (a - b)))
     ; ("*", func_of_binary_op (fun a b -> NumVal (a * b)))
     ; ("/", func_of_binary_op (fun a b -> NumVal (a / b)))
-    ; ("=", func_of_binary_op (fun a b -> BoolVal (a = b)))
+    ]
+
+  let list = 
+    [ ("cons", FuncVal (function
+          | [a; b] -> ConsVal (a, b)
+          | _ -> raise (RuntimeException "Expected two values.")))
+    ; ("car", FuncVal (function
+           | [a; b] -> ConsVal (a, b)
+           | _ -> raise (RuntimeException "Expected two values.")))
+    ; ("cdr", FuncVal (function
+           | [ConsVal (_, b)] -> b
+           | _ -> raise (RuntimeException "Expected a single cons.")))
+    ]
+
+  let all =
+    arith @
+    list @
+    [ ("=", FuncVal (function
+          | [a; b] -> BoolVal (a = b)
+          | _ -> raise (RuntimeException "Expected exactly two values.")))
     ]
 end
 

@@ -78,6 +78,29 @@ let run () =
              (factorial (- n 1)))))
     (factorial 5)" |> eval)) ;
 
+  let rec cons_of_list = function
+    | [] -> NilVal
+    | x::xs -> ConsVal (x, cons_of_list xs)
+  in
+  assert (
+    cons_of_list [NumVal 1; NumVal 2; NumVal 3; NumVal 4] =
+    (Parser.parse "
+      (fun (upto n)
+        (fun (inner a b)
+          (if (= a b)
+            nil
+            (cons a (inner (+ a 1) b))))
+        (inner 1 n))
+      (upto 5)
+    " |> eval));
+
+  assert (
+    BoolVal true =
+    (Parser.parse "(= (cons 5 4) (cons (+ 3 2) 4))" |> eval));
+  assert (
+    BoolVal false =
+    (Parser.parse "(= (cons 5 4) (cons (+ 3 2) 5))" |> eval));
+
   assert ("(let [(x 5) (y 15)] (+ x y))" =
           (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_program));
   assert ("(if #t 3 5)" =
