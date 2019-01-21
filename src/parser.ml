@@ -14,7 +14,7 @@ let string_lit =
   in spaces >> between quot quot (many1 any) => implode % (fun s -> Lisp.String s)
 
 let binding =
-  let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?']
+  let symbol = one_of ['\''; '"'; '-'; '_'; '+'; '*'; '?'; '=']
   in spaces >> many1 (digit <|> letter <|> symbol) => implode
 
 let variable_lit =

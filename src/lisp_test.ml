@@ -97,10 +97,20 @@ let () =
   assert (NumVal 42 = (Parser.parse "((fn (x) (+ x 5)) 37)" |> eval));
   assert (NumVal 20 = (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> eval));
 
-  assert ("(let [(x 5) (y 15)] (+ x y))" = (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_expressions));
-  assert ("(if #t 3 5)" = (Parser.parse "(if #t \n 3  \t 5)" |> string_of_expressions));
+  assert (NumVal 120 = (Parser.parse "
+    (fun (factorial n)
+      (if (= n 0)
+          1
+          (* n
+             (factorial (- n 1)))))
+    (factorial 5)" |> eval)) ; 
 
-  assert (7 = (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> num_exprs));
+  assert ("(let [(x 5) (y 15)] (+ x y))" =
+          (Parser.parse "(let [(x 5)     (y 15)] (+ x y))" |> string_of_expressions));
+  assert ("(if #t 3 5)" =
+          (Parser.parse "(if #t \n 3  \t 5)" |> string_of_expressions));
+  assert (7 =
+          (Parser.parse "(let [(x 5) (y 15)] (+ x y))" |> num_exprs));
 
   assert (
     (Parser.parse "(let [(x 5) (y 15)] (+ x y))"

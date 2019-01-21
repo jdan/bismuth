@@ -117,7 +117,10 @@ let rec string_of_expression = function
     string_of_expression e1 ^ " " ^
     String.concat " " (List.map string_of_expression es) ^
     ")"
-  | IfExpression (e1, e2, e3) -> "(if " ^ String.concat " " (List.map string_of_expression [e1; e2; e3]) ^ ")"
+  | IfExpression (e1, e2, e3) ->
+    "(if " ^
+    String.concat " " (List.map string_of_expression [e1; e2; e3]) ^
+    ")"
   | LetExpression (bindings, body) ->
     let string_of_binding (b, v) = "(" ^ b ^ " " ^ string_of_expression v ^ ")"
     in
@@ -138,6 +141,11 @@ let stdlib: env = [ ("+", func_of_binary_op (+))
                   ; ("-", func_of_binary_op (-))
                   ; ("*", func_of_binary_op ( * ))
                   ; ("/", func_of_binary_op (/))
+                  ; ("=",
+                     (FuncVal (function
+                          | [NumVal a; NumVal b] -> BoolVal (a = b)
+                          | _ -> raise (RuntimeException "Expected exactly two ints."))
+                     ))
                   ]
 
 let eval exprs = match value_env_of_expressions stdlib exprs with
