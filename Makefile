@@ -1,10 +1,20 @@
+.PHONY: docs
+
+BUILD=ocamlbuild -use-ocamlfind -pkgs opal
+
 default: build
 
 build:
-	ocamlbuild -use-ocamlfind -pkgs opal src/lang.native
+	$(BUILD) src/lang.native
 
 build-test:
-	ocamlbuild -use-ocamlfind -pkgs opal src/test.native
+	$(BUILD) src/test.native
+
+docs:
+	rm -rf docs
+	$(BUILD) src/lang.docdir/index.html
+	mv _build/src/lang.docdir docs
+	rm lang.docdir
 
 clean:
 	rm -rf _build

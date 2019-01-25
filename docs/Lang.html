@@ -1,0 +1,158 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="next" href="Parser.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Lang" rel="Chapter" href="Lang.html">
+<link title="Parser" rel="Chapter" href="Parser.html">
+<link title="Transform" rel="Chapter" href="Transform.html"><title>Lang</title>
+</head>
+<body>
+<div class="navbar">&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;<a class="post" href="Parser.html" title="Parser">Next</a>
+</div>
+<h1>Module <a href="type_Lang.html">Lang</a></h1>
+
+<pre><span id="MODULELang"><span class="keyword">module</span> Lang</span>: <code class="code">sig</code> <a href="Lang.html">..</a> <code class="code">end</code></pre><hr width="100%">
+
+<pre><code><span id="TYPEexpression"><span class="keyword">type</span> <code class="type"></code>expression</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.Nil"><span class="constructor">Nil</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.Number"><span class="constructor">Number</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.String"><span class="constructor">String</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.Boolean"><span class="constructor">Boolean</span></span> <span class="keyword">of</span> <code class="type">bool</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.Variable"><span class="constructor">Variable</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.Abstraction"><span class="constructor">Abstraction</span></span> <span class="keyword">of</span> <code class="type">string list * <a href="Lang.html#TYPEexpression">expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.NamedAbstraction"><span class="constructor">NamedAbstraction</span></span> <span class="keyword">of</span> <code class="type">string * string list * <a href="Lang.html#TYPEexpression">expression</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.Application"><span class="constructor">Application</span></span> <span class="keyword">of</span> <code class="type"><a href="Lang.html#TYPEexpression">expression</a> * <a href="Lang.html#TYPEexpression">expression</a> list</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.IfExpression"><span class="constructor">IfExpression</span></span> <span class="keyword">of</span> <code class="type"><a href="Lang.html#TYPEexpression">expression</a> * <a href="Lang.html#TYPEexpression">expression</a> * <a href="Lang.html#TYPEexpression">expression</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTexpression.LetExpression"><span class="constructor">LetExpression</span></span> <span class="keyword">of</span> <code class="type">(string * <a href="Lang.html#TYPEexpression">expression</a>) list * <a href="Lang.html#TYPEexpression">expression</a></code></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEprogram"><span class="keyword">type</span> <code class="type"></code>program</span> = <code class="type"><a href="Lang.html#TYPEexpression">expression</a> list</code> </pre>
+
+
+<pre><code><span id="TYPEvalue"><span class="keyword">type</span> <code class="type"></code>value</span> = </code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue.NilVal"><span class="constructor">NilVal</span></span></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue.NumVal"><span class="constructor">NumVal</span></span> <span class="keyword">of</span> <code class="type">int</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue.StrVal"><span class="constructor">StrVal</span></span> <span class="keyword">of</span> <code class="type">string</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue.BoolVal"><span class="constructor">BoolVal</span></span> <span class="keyword">of</span> <code class="type">bool</code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue.ConsVal"><span class="constructor">ConsVal</span></span> <span class="keyword">of</span> <code class="type"><a href="Lang.html#TYPEvalue">value</a> * <a href="Lang.html#TYPEvalue">value</a></code></code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code><span class="keyword">|</span></code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTvalue.FuncVal"><span class="constructor">FuncVal</span></span> <span class="keyword">of</span> <code class="type">(<a href="Lang.html#TYPEvalue">value</a> list -> <a href="Lang.html#TYPEvalue">value</a>)</code></code></td>
+
+</tr></table>
+
+
+
+<pre><span id="TYPEenv"><span class="keyword">type</span> <code class="type"></code>env</span> = <code class="type">(string * <a href="Lang.html#TYPEvalue">value</a>) list</code> </pre>
+
+
+<pre><span id="VAL_let"><span class="keyword">val</span> _let</span> : <code class="type">(string * <a href="Lang.html#TYPEexpression">expression</a>) list -> <a href="Lang.html#TYPEexpression">expression</a> -> <a href="Lang.html#TYPEexpression">expression</a></code></pre>
+<pre><span id="EXCEPTIONRuntimeException"><span class="keyword">exception</span> RuntimeException</span> <span class="keyword">of</span> <code class="type">string</code></pre>
+
+<pre><span id="VALstring_of_value"><span class="keyword">val</span> string_of_value</span> : <code class="type"><a href="Lang.html#TYPEvalue">value</a> -> string</code></pre>
+<pre><span id="VALstring_of_program"><span class="keyword">val</span> string_of_program</span> : <code class="type"><a href="Lang.html#TYPEprogram">program</a> -> string</code></pre>
+<pre><span id="VALvalue_of_expression"><span class="keyword">val</span> value_of_expression</span> : <code class="type"><a href="Lang.html#TYPEenv">env</a> -> <a href="Lang.html#TYPEexpression">expression</a> -> <a href="Lang.html#TYPEvalue">value</a></code></pre>
+<pre><span id="VALeval"><span class="keyword">val</span> eval</span> : <code class="type"><a href="Lang.html#TYPEprogram">program</a> -> <a href="Lang.html#TYPEvalue">value</a></code></pre></body></html>

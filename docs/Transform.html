@@ -1,0 +1,85 @@
+<!DOCTYPE HTML PUBLIC "-//W3C//DTD HTML 4.01 Transitional//EN">
+<html>
+<head>
+<link rel="stylesheet" href="style.css" type="text/css">
+<meta content="text/html; charset=iso-8859-1" http-equiv="Content-Type">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<link rel="Start" href="index.html">
+<link rel="previous" href="Parser.html">
+<link rel="Up" href="index.html">
+<link title="Index of types" rel=Appendix href="index_types.html">
+<link title="Index of exceptions" rel=Appendix href="index_exceptions.html">
+<link title="Index of values" rel=Appendix href="index_values.html">
+<link title="Index of modules" rel=Appendix href="index_modules.html">
+<link title="Lang" rel="Chapter" href="Lang.html">
+<link title="Parser" rel="Chapter" href="Parser.html">
+<link title="Transform" rel="Chapter" href="Transform.html"><title>Transform</title>
+</head>
+<body>
+<div class="navbar"><a class="pre" href="Parser.html" title="Parser">Previous</a>
+&nbsp;<a class="up" href="index.html" title="Index">Up</a>
+&nbsp;</div>
+<h1>Module <a href="type_Transform.html">Transform</a></h1>
+
+<pre><span id="MODULETransform"><span class="keyword">module</span> Transform</span>: <code class="code">sig</code> <a href="Transform.html">..</a> <code class="code">end</code></pre><hr width="100%">
+
+<pre><span id="VALswap_variable"><span class="keyword">val</span> swap_variable</span> : <code class="type">string -> string -> <a href="Lang.html#TYPEexpression">Lang.expression</a> -> <a href="Lang.html#TYPEexpression">Lang.expression</a></code></pre>
+<pre><span id="EXCEPTIONTraversalError"><span class="keyword">exception</span> TraversalError</span></pre>
+
+<pre><span id="VALflatten"><span class="keyword">val</span> flatten</span> : <code class="type"><a href="Lang.html#TYPEexpression">Lang.expression</a> list -> <a href="Lang.html#TYPEexpression">Lang.expression</a> list</code></pre>
+<pre><span id="VALnum_exprs"><span class="keyword">val</span> num_exprs</span> : <code class="type"><a href="Lang.html#TYPEexpression">Lang.expression</a> list -> int</code></pre>
+<pre><span id="VALtraverse"><span class="keyword">val</span> traverse</span> : <code class="type"><a href="Lang.html#TYPEexpression">Lang.expression</a> list -> int -> <a href="Lang.html#TYPEexpression">Lang.expression</a></code></pre>
+<pre><code><span id="TYPEreplace_opts"><span class="keyword">type</span> <code class="type"></code>replace_opts</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTreplace_opts.expr">expr</span>&nbsp;: <code class="type"><a href="Lang.html#TYPEexpression">Lang.expression</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTreplace_opts.desired">desired</span>&nbsp;: <code class="type"><a href="Lang.html#TYPEexpression">Lang.expression</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTreplace_opts.pos">pos</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALreplace"><span class="keyword">val</span> replace</span> : <code class="type"><a href="Transform.html#TYPEreplace_opts">replace_opts</a> -> <a href="Lang.html#TYPEexpression">Lang.expression</a></code></pre>
+<pre><code><span id="TYPEabstract_opts"><span class="keyword">type</span> <code class="type"></code>abstract_opts</span> = {</code></pre><table class="typetable">
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_opts.expr">expr</span>&nbsp;: <code class="type"><a href="Lang.html#TYPEexpression">Lang.expression</a></code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_opts.name">name</span>&nbsp;: <code class="type">string</code>;</code></td>
+
+</tr>
+<tr>
+<td align="left" valign="top" >
+<code>&nbsp;&nbsp;</code></td>
+<td align="left" valign="top" >
+<code><span id="TYPEELTabstract_opts.pos">pos</span>&nbsp;: <code class="type">int</code>;</code></td>
+
+</tr></table>
+}
+
+
+
+<pre><span id="VALabstract"><span class="keyword">val</span> abstract</span> : <code class="type"><a href="Transform.html#TYPEabstract_opts">abstract_opts</a> -> <a href="Lang.html#TYPEexpression">Lang.expression</a></code></pre></body></html>
