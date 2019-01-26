@@ -53,7 +53,7 @@ let rec value_env_of_expressions (env: env) =
 and value_of_expression env expr = match value_env_of_expression env expr with
   | (v, _) -> v
 
-and value_env_of_expression (env: env) expr =
+and value_env_of_expression env expr =
   let with_env v = (v, env)
   in match expr with
   | Nil -> NilVal |> with_env
