@@ -86,3 +86,9 @@ let run () =
         }
     ]
   );
+
+  assert ("(fn (a b c) (+ a b c))" =
+          (Parser.parse "(fn (a b c) (+ a b c))" |> pretty_string_of_program 80));
+
+  assert ("(fn (a b c)\n    (+ a b c))" =
+          (Parser.parse "(fn (a b c) (+ a b c))" |> pretty_string_of_program 10));

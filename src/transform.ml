@@ -128,3 +128,64 @@ let abstract { expr ; name ; pos } =
                        desired = Variable name;
                      }
   in LetExpression ([(name, value)], body)
+
+let rec pretty_string_of_expression budget exp =
+  let rec next_to str = function
+    | [] -> [str]
+    | hd::tl ->
+      let indent = String.make (1 + String.length str) ' '
+      in (str ^ " " ^ hd ) ::
+         List.map (fun s -> indent ^ s) tl
+
+  and add_end str = function
+    | [] -> [str]
+    | hd::[] -> [hd ^ str]
+    | hd::tl -> hd :: add_end str tl
+
+  and inner budget exp =
+    let attempt = string_of_expression exp
+    in
+    if String.length attempt <= budget
+    then [attempt]
+    else
+      match exp with
+      | Nil -> ["nil"]
+      | Number v -> [string_of_int v]
+      | String v -> ["\"" ^ v ^ "\""]
+      | Boolean true -> ["#t"]
+      | Boolean false -> ["#f"]
+      | Variable v -> [v]
+      | Abstraction (args, e) ->
+        next_to
+          "(fn"
+          (("(" ^ (String.concat " " args) ^ ")")
+           :: add_end ")" (inner (budget - 3) e))
+
+      | NamedAbstraction (name, args, es) ->
+        ["(fun (" ^
+         name ^ " " ^
+         String.concat " " args ^
+         ") " ^
+         String.concat " " (List.map string_of_expression es) ^
+         ")"]
+      | Application (e1, es) ->
+        ["(" ^
+         string_of_expression e1 ^ " " ^
+         String.concat " " (List.map string_of_expression es) ^
+         ")"]
+      | IfExpression (e1, e2, e3) ->
+        ["(if " ^
+         String.concat " " (List.map string_of_expression [e1; e2; e3]) ^
+         ")"]
+      | LetExpression (bindings, body) ->
+        let string_of_binding (b, v) = "(" ^ b ^ " " ^ string_of_expression v ^ ")"
+        in
+        ["(let [" ^
+         String.concat " " (List.map string_of_binding bindings) ^
+         "] " ^
+         string_of_expression body ^
+         ")"]
+  in String.concat "\n" (inner budget exp)
+
+and pretty_string_of_program budget exprs =
+  String.concat "\n\n" (List.map (fun e -> pretty_string_of_expression budget e) exprs)
