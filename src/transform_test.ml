@@ -87,8 +87,17 @@ let run () =
     ]
   );
 
-  assert ("(fn (a b c) (+ a b c))" =
-          (Parser.parse "(fn (a b c) (+ a b c))" |> pretty_string_of_program 80));
-
+  (*
   assert ("(fn (a b c)\n    (+ a b c))" =
-          (Parser.parse "(fn (a b c) (+ a b c))" |> pretty_string_of_program 10));
+          (Parser.parse "(fn (a b c) (+ a b c))" |> pretty_string_of_program));
+          *)
+
+  Parser.parse "
+      (fun (upto n)
+        (fun (inner a b)
+          (if (= a b)
+            nil
+            (cons a (inner (+ a 1) b))))
+        (inner 1 n))
+      (upto 5)
+    " |> pretty_string_of_program |> print_endline;

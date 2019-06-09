@@ -9,5 +9,5 @@ type replace_opts = { expr : expression; desired : expression; pos : int; }
 val replace : replace_opts -> expression
 type abstract_opts = { expr : expression; name : string; pos : int; }
 val abstract : abstract_opts -> expression
-val pretty_string_of_program : int -> program -> string
+val pretty_string_of_program : program -> string
 

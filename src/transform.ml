@@ -129,7 +129,7 @@ let abstract { expr ; name ; pos } =
                      }
   in LetExpression ([(name, value)], body)
 
-let rec pretty_string_of_expression budget exp =
+let rec pretty_string_of_expression exp =
   let rec next_to str = function
     | [] -> [str]
     | hd::tl ->
@@ -137,55 +137,60 @@ let rec pretty_string_of_expression budget exp =
       in (str ^ " " ^ hd ) ::
          List.map (fun s -> indent ^ s) tl
 
+  and indent spaces = next_to (String.make (spaces - 1) ' ')
+
   and add_end str = function
     | [] -> [str]
     | hd::[] -> [hd ^ str]
     | hd::tl -> hd :: add_end str tl
 
-  and inner budget exp =
-    let attempt = string_of_expression exp
-    in
-    if String.length attempt <= budget
-    then [attempt]
-    else
-      match exp with
-      | Nil -> ["nil"]
-      | Number v -> [string_of_int v]
-      | String v -> ["\"" ^ v ^ "\""]
-      | Boolean true -> ["#t"]
-      | Boolean false -> ["#f"]
-      | Variable v -> [v]
-      | Abstraction (args, e) ->
-        next_to
-          "(fn"
-          (("(" ^ (String.concat " " args) ^ ")")
-           :: add_end ")" (inner (budget - 3) e))
+  and inner = function
+    | Nil -> ["nil"]
+    | Number v -> [string_of_int v]
+    | String v -> ["\"" ^ v ^ "\""]
+    | Boolean true -> ["#t"]
+    | Boolean false -> ["#f"]
+    | Variable v -> [v]
+    | Abstraction (args, e) ->
+      let args = "(" ^ (String.concat " " args) ^ ")"
+      and rest = add_end ")" (inner e)
+      in next_to "(fn" (args :: rest)
 
-      | NamedAbstraction (name, args, es) ->
-        ["(fun (" ^
-         name ^ " " ^
-         String.concat " " args ^
-         ") " ^
-         String.concat " " (List.map string_of_expression es) ^
-         ")"]
-      | Application (e1, es) ->
-        ["(" ^
-         string_of_expression e1 ^ " " ^
-         String.concat " " (List.map string_of_expression es) ^
-         ")"]
-      | IfExpression (e1, e2, e3) ->
-        ["(if " ^
-         String.concat " " (List.map string_of_expression [e1; e2; e3]) ^
-         ")"]
-      | LetExpression (bindings, body) ->
-        let string_of_binding (b, v) = "(" ^ b ^ " " ^ string_of_expression v ^ ")"
-        in
-        ["(let [" ^
-         String.concat " " (List.map string_of_binding bindings) ^
-         "] " ^
-         string_of_expression body ^
-         ")"]
-  in String.concat "\n" (inner budget exp)
+    | NamedAbstraction (name, args, es) ->
+      let name_and_args = "(" ^ name ^ " " ^ (String.concat " " args) ^ ")"
+      and rest = add_end ")" (List.map inner es |> List.flatten)
+      in (
+        ("(fun " ^ name_and_args) ::
+        indent 4 rest
+      )
 
-and pretty_string_of_program budget exprs =
-  String.concat "\n\n" (List.map (fun e -> pretty_string_of_expression budget e) exprs)
+    | Application (e1, es) -> (
+        match inner e1 with
+        | hd::[] ->
+          (* TODO: see if hd next to the top of es is short enough *)
+          next_to
+            ("(" ^ hd)
+            (add_end ")" (List.map inner es |> List.flatten))
+        | p1 ->
+          let rest = List.map inner es |> List.flatten
+          (* TODO: see if rest can fit on one line *)
+          in next_to "(" (List.append p1 rest) |> add_end ")"
+      )
+
+    | IfExpression (e1, e2, e3) ->
+      let clauses = List.map inner [e1; e2; e3] |> List.flatten
+      in next_to "(if" clauses |> add_end ")"
+
+    | LetExpression (bindings, body) ->
+      (* TODO *)
+      let string_of_binding (b, v) = "(" ^ b ^ " " ^ string_of_expression v ^ ")"
+      in
+      ["(let [" ^
+       String.concat " " (List.map string_of_binding bindings) ^
+       "] " ^
+       string_of_expression body ^
+       ")"]
+  in String.concat "\n" (inner exp)
+
+and pretty_string_of_program exprs =
+  String.concat "\n\n" (List.map pretty_string_of_expression exprs)
